@@ -19,88 +19,37 @@ const OrdersManager = () => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [customAddress, setCustomAddress] = useState(false);
-const [formData, setFormData] = useState({
-  clientId: '',
-  orderType: 'delivery',
-  deliveryAddress: '',
-  deliveryAddressType: '',
-  deliveryDateStart: '', // Required
-  deliveryDateEnd: '',   // Optional
-  deliveryTimeStart: '', // Optional
-  deliveryTimeEnd: '',   // Optional
-  notes: '',
-  priority: 'normal'
-});
-
-  useEffect(() => {
-    fetchOrders();
-    fetchClients();
-    fetchDrivers();
-
-    if (socket) {
-      socket.on('order-updated', (updatedOrder) => {
-        setOrders(prev => prev.map(order => 
-          order._id === updatedOrder._id ? updatedOrder : order
-        ));
-        setSuccess(`Order ${updatedOrder.orderNumber} updated to ${updatedOrder.status}`);
-        setTimeout(() => setSuccess(''), 3000);
-      });
-
-      socket.on('order-created', (newOrder) => {
-        setOrders(prev => [newOrder, ...prev]);
-        setSuccess(`New order ${newOrder.orderNumber} created!`);
-        setTimeout(() => setSuccess(''), 3000);
-      });
-    }
-
-    return () => {
-      if (socket) {
-        socket.off('order-updated');
-        socket.off('order-created');
-      }
-    };
-  }, [socket]);
-
-const handleDeliveryDateChange = (e) => {
-  setFormData({
-    ...formData,
-    deliveryDate: e.target.value
+  const [formData, setFormData] = useState({
+    clientId: '',
+    orderType: 'delivery',
+    deliveryAddress: '',
+    deliveryAddressType: '',
+    deliveryDateStart: '',
+    deliveryDateEnd: '',
+    deliveryTimeStart: '',
+    deliveryTimeEnd: '',
+    notes: '',
+    priority: 'normal'
   });
-};
 
-const handleDeliveryTimeStartChange = (e) => {
-  setFormData({
-    ...formData,
-    deliveryTimeStart: e.target.value
-  });
-};
-
-const handleDeliveryTimeEndChange = (e) => {
-  setFormData({
-    ...formData,
-    deliveryTimeEnd: e.target.value
-  });
-};
-
-const handleDateStartChange = (e) => {
-  setFormData({
-    ...formData,
-    deliveryDateStart: e.target.value
-  });
-};
-
-const handleDateEndChange = (e) => {
-  setFormData({
-    ...formData,
-    deliveryDateEnd: e.target.value
-  });
-};
-
+  // Fetch orders - filtered by role
   const fetchOrders = async () => {
     try {
       setLoading(true);
       const res = await axios.get('http://localhost:5000/api/orders');
-      setOrders(res.data);
+      
+      let filteredOrders = res.data;
+      
+      // If user is manager, only show orders they created
+      if (user?.role === 'manager') {
+        filteredOrders = res.data.filter(order => 
+          order.createdBy?._id === user?.id || order.createdBy === user?.id
+        );
+      }
+      // If user is admin, show all orders
+      // If user is driver, show assigned orders (handled in DriverPanel)
+      
+      setOrders(filteredOrders);
       setError('');
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -110,14 +59,15 @@ const handleDateEndChange = (e) => {
     }
   };
 
-  const fetchClients = async () => {
-    try {
-      const res = await axios.get('http://localhost:5000/api/clients');
-      setClients(res.data.filter(c => c.status === 'active'));
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-    }
-  };
+const fetchClients = async () => {
+  try {
+    const res = await axios.get('http://localhost:5000/api/clients');
+    // Backend already filters by role, so this will only return manager's clients
+    setClients(res.data.filter(c => c.status === 'active'));
+  } catch (error) {
+    console.error('Error fetching clients:', error);
+  }
+};
 
   const fetchDrivers = async () => {
     try {
@@ -127,6 +77,50 @@ const handleDateEndChange = (e) => {
       console.error('Error fetching drivers:', error);
     }
   };
+
+  useEffect(() => {
+    fetchOrders();
+    fetchClients();
+    if (user?.role !== 'manager') {
+    fetchDrivers();
+
+    }
+
+    if (socket) {
+      const handleOrderUpdate = (updatedOrder) => {
+        // Only update if this order belongs to this manager (for manager role)
+        if (user?.role === 'manager') {
+          if (updatedOrder.createdBy?._id === user?.id || updatedOrder.createdBy === user?.id) {
+            fetchOrders();
+          }
+        } else {
+          fetchOrders();
+        }
+        setSuccess(`Order ${updatedOrder.orderNumber} updated`);
+        setTimeout(() => setSuccess(''), 3000);
+      };
+
+      const handleOrderCreate = (newOrder) => {
+        if (user?.role === 'manager') {
+          if (newOrder.createdBy?._id === user?.id || newOrder.createdBy === user?.id) {
+            fetchOrders();
+          }
+        } else {
+          fetchOrders();
+        }
+        setSuccess(`New order ${newOrder.orderNumber} created!`);
+        setTimeout(() => setSuccess(''), 3000);
+      };
+
+      socket.on('order-updated', handleOrderUpdate);
+      socket.on('order-created', handleOrderCreate);
+
+      return () => {
+        socket.off('order-updated', handleOrderUpdate);
+        socket.off('order-created', handleOrderCreate);
+      };
+    }
+  }, [socket, user]);
 
   const handleClientChange = (clientId) => {
     const client = clients.find(c => c._id === clientId);
@@ -169,70 +163,58 @@ const handleDateEndChange = (e) => {
     });
   };
 
-  const handleTimeWindowChange = (field, value) => {
-    setFormData({
-      ...formData,
-      timeWindow: {
-        ...formData.timeWindow,
-        [field]: value
-      }
-    });
-  };
-
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  // Validate required fields
-  if (!formData.clientId) {
-    setError('Please select a client');
-    setTimeout(() => setError(''), 3000);
-    return;
-  }
-  
-  if (!formData.deliveryAddress) {
-    setError('Please select or enter a delivery address');
-    setTimeout(() => setError(''), 3000);
-    return;
-  }
-  
-  if (!formData.deliveryDateStart) {
-    setError('Please select a delivery start date');
-    setTimeout(() => setError(''), 3000);
-    return;
-  }
-  
-  // Prepare data for API - MATCH BACKEND EXPECTATION
-  const orderData = {
-    clientId: formData.clientId,
-    orderType: formData.orderType,
-    deliveryAddress: formData.deliveryAddress,
-    deliveryAddressType: formData.deliveryAddressType,
-    deliveryDateStart: formData.deliveryDateStart,
-    deliveryDateEnd: formData.deliveryDateEnd || null,
-    deliveryTimeStart: formData.deliveryTimeStart || null,
-    deliveryTimeEnd: formData.deliveryTimeEnd || null,
-    notes: formData.notes || null,
-    priority: formData.priority
-  };
-  
-  try {
-    if (editingOrder) {
-      await axios.put(`http://localhost:5000/api/orders/${editingOrder._id}`, orderData);
-      setSuccess('Order updated successfully!');
-    } else {
-      await axios.post('http://localhost:5000/api/orders', orderData);
-      setSuccess('Order created successfully!');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.clientId) {
+      setError('Please select a client');
+      setTimeout(() => setError(''), 3000);
+      return;
     }
     
-    fetchOrders();
-    resetForm();
-    setTimeout(() => setSuccess(''), 3000);
-  } catch (error) {
-    console.error('Error saving order:', error);
-    setError(error.response?.data?.error || 'Failed to save order');
-    setTimeout(() => setError(''), 3000);
-  }
-};
+    if (!formData.deliveryAddress) {
+      setError('Please select or enter a delivery address');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+    
+    if (!formData.deliveryDateStart) {
+      setError('Please select a delivery start date');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+    
+    const orderData = {
+      clientId: formData.clientId,
+      orderType: formData.orderType,
+      deliveryAddress: formData.deliveryAddress,
+      deliveryAddressType: formData.deliveryAddressType,
+      deliveryDateStart: formData.deliveryDateStart,
+      deliveryDateEnd: formData.deliveryDateEnd || null,
+      deliveryTimeStart: formData.deliveryTimeStart || null,
+      deliveryTimeEnd: formData.deliveryTimeEnd || null,
+      notes: formData.notes || null,
+      priority: formData.priority
+    };
+    
+    try {
+      if (editingOrder) {
+        await axios.put(`http://localhost:5000/api/orders/${editingOrder._id}`, orderData);
+        setSuccess('Order updated successfully!');
+      } else {
+        await axios.post('http://localhost:5000/api/orders', orderData);
+        setSuccess('Order created successfully!');
+      }
+      
+      fetchOrders();
+      resetForm();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error saving order:', error);
+      setError(error.response?.data?.error || 'Failed to save order');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
 
   const handleConfirmOrder = async (orderId) => {
     try {
@@ -247,38 +229,24 @@ const handleSubmit = async (e) => {
     }
   };
 
-const handleAssignDriver = async (orderId, driverId) => {
-  console.log('Assigning driver:', { orderId, driverId });
-  
-  if (!driverId || driverId === '') {
-    console.error('No driver selected');
-    setError('Please select a driver');
-    setTimeout(() => setError(''), 3000);
-    return;
-  }
-  
-  try {
-    const response = await axios.put(
-      `http://localhost:5000/api/orders/${orderId}/assign`,
-      { driverId: driverId },
-      {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      }
-    );
+  const handleAssignDriver = async (orderId, driverId) => {
+    if (!driverId || driverId === '') {
+      setError('Please select a driver');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
     
-    console.log('Assignment response:', response.data);
-    setSuccess(`Driver assigned successfully! Notification sent to driver.`);
-    fetchOrders();
-    setTimeout(() => setSuccess(''), 3000);
-  } catch (error) {
-    console.error('Error assigning driver:', error);
-    console.error('Error response:', error.response?.data);
-    setError(error.response?.data?.error || 'Failed to assign driver');
-    setTimeout(() => setError(''), 3000);
-  }
-};
+    try {
+      await axios.put(`http://localhost:5000/api/orders/${orderId}/assign`, { driverId });
+      setSuccess(`Driver assigned successfully!`);
+      fetchOrders();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error assigning driver:', error);
+      setError(error.response?.data?.error || 'Failed to assign driver');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
 
   const handleUpdateStatus = async (orderId, status) => {
     try {
@@ -293,25 +261,25 @@ const handleAssignDriver = async (orderId, driverId) => {
     }
   };
 
- const resetForm = () => {
-  setEditingOrder(null);
-  setSelectedClient(null);
-  setSelectedAddressId('');
-  setCustomAddress(false);
-  setFormData({
-    clientId: '',
-    orderType: 'delivery',
-    deliveryAddress: '',
-    deliveryAddressType: '',
-    deliveryDateStart: '',
-    deliveryDateEnd: '',
-    deliveryTimeStart: '',
-    deliveryTimeEnd: '',
-    notes: '',
-    priority: 'normal'
-  });
-  setShowModal(false);
-};
+  const resetForm = () => {
+    setEditingOrder(null);
+    setSelectedClient(null);
+    setSelectedAddressId('');
+    setCustomAddress(false);
+    setFormData({
+      clientId: '',
+      orderType: 'delivery',
+      deliveryAddress: '',
+      deliveryAddressType: '',
+      deliveryDateStart: '',
+      deliveryDateEnd: '',
+      deliveryTimeStart: '',
+      deliveryTimeEnd: '',
+      notes: '',
+      priority: 'normal'
+    });
+    setShowModal(false);
+  };
 
   const handleEdit = (order) => {
     setEditingOrder(order);
@@ -320,7 +288,10 @@ const handleAssignDriver = async (orderId, driverId) => {
       orderType: order.orderType || 'delivery',
       deliveryAddress: order.deliveryAddress || '',
       deliveryAddressType: order.deliveryAddressType || '',
-      timeWindow: order.timeWindow || { start: '', end: '' },
+      deliveryDateStart: order.deliveryDateStart ? order.deliveryDateStart.split('T')[0] : '',
+      deliveryDateEnd: order.deliveryDateEnd ? order.deliveryDateEnd.split('T')[0] : '',
+      deliveryTimeStart: order.deliveryTimeStart || '',
+      deliveryTimeEnd: order.deliveryTimeEnd || '',
       notes: order.notes || '',
       priority: order.priority || 'normal'
     });
@@ -375,11 +346,35 @@ const handleAssignDriver = async (orderId, driverId) => {
     }
   };
 
-  const formatTimeWindow = (start, end) => {
-    if (!start && !end) return 'Not specified';
-    if (start && !end) return `From ${new Date(start).toLocaleString()}`;
-    if (!start && end) return `Until ${new Date(end).toLocaleString()}`;
-    return `${new Date(start).toLocaleString()} - ${new Date(end).toLocaleString()}`;
+  const formatDeliveryPeriod = (order) => {
+    if (!order.deliveryDateStart) return 'Not specified';
+    
+    const startDate = new Date(order.deliveryDateStart).toLocaleDateString();
+    
+    if (!order.deliveryDateEnd) {
+      let result = startDate;
+      if (order.deliveryTimeStart && order.deliveryTimeEnd) {
+        result += ` ${order.deliveryTimeStart} - ${order.deliveryTimeEnd}`;
+      } else if (order.deliveryTimeStart) {
+        result += ` from ${order.deliveryTimeStart}`;
+      } else if (order.deliveryTimeEnd) {
+        result += ` until ${order.deliveryTimeEnd}`;
+      }
+      return result;
+    }
+    
+    const endDate = new Date(order.deliveryDateEnd).toLocaleDateString();
+    let result = `${startDate} - ${endDate}`;
+    
+    if (order.deliveryTimeStart && order.deliveryTimeEnd) {
+      result += ` at ${order.deliveryTimeStart} - ${order.deliveryTimeEnd}`;
+    } else if (order.deliveryTimeStart) {
+      result += ` from ${order.deliveryTimeStart}`;
+    } else if (order.deliveryTimeEnd) {
+      result += ` until ${order.deliveryTimeEnd}`;
+    }
+    
+    return result;
   };
 
   const filteredOrders = orders.filter(order => {
@@ -396,7 +391,7 @@ const handleAssignDriver = async (orderId, driverId) => {
   return (
     <div className="orders-manager">
       <div className="orders-header">
-        <h2>Manage Orders</h2>
+        <h2>{user?.role === 'manager' ? 'My Orders' : 'Manage Orders'}</h2>
         <button className="btn-primary" onClick={() => setShowModal(true)}>
           + Create Order
         </button>
@@ -470,7 +465,7 @@ const handleAssignDriver = async (orderId, driverId) => {
               <th>Type</th>
               <th>Priority</th>
               <th>Delivery Address</th>
-              <th>Time Window</th>
+              <th>Delivery Period</th>
               <th>Driver</th>
               <th>Status</th>
               <th>Actions</th>
@@ -508,23 +503,31 @@ const handleAssignDriver = async (orderId, driverId) => {
                       )}
                     </div>
                   </td>
-                  <td className="time-window">
-                    {formatTimeWindow(order.timeWindow?.start, order.timeWindow?.end)}
+                  <td className="delivery-period">
+                    {formatDeliveryPeriod(order)}
+                    {order.deliveryDateEnd && order.deliveryDateStart !== order.deliveryDateEnd && (
+                      <span className="range-badge">📅 Multi-day</span>
+                    )}
                   </td>
                   <td>
                     {order.assignedDriver ? (
                       <span className="driver-name">{order.assignedDriver.name}</span>
                     ) : (
-                      <select 
-                        className="assign-driver-select"
-                        onChange={(e) => handleAssignDriver(order._id, e.target.value)}
-                        value=""
-                      >
-                        <option value="" disabled>Assign driver</option>
-                        {drivers.map(driver => (
-                          <option key={driver._id} value={driver._id}>{driver.name}</option>
-                        ))}
-                      </select>
+                      user?.role === 'admin' && (
+                        <select 
+                          className="assign-driver-select"
+                          onChange={(e) => handleAssignDriver(order._id, e.target.value)}
+                          value=""
+                        >
+                          <option value="" disabled>Assign driver</option>
+                          {drivers.map(driver => (
+                            <option key={driver._id} value={driver._id}>{driver.name}</option>
+                          ))}
+                        </select>
+                      )
+                    )}
+                    {user?.role === 'manager' && !order.assignedDriver && (
+                      <span className="no-driver">Waiting for admin</span>
                     )}
                   </td>
                   <td>
@@ -534,6 +537,7 @@ const handleAssignDriver = async (orderId, driverId) => {
                         style={{ borderColor: getStatusColor(order.status) }}
                         value={order.status}
                         onChange={(e) => handleUpdateStatus(order._id, e.target.value)}
+                        disabled={user?.role === 'manager' && order.status === 'pending_confirmation'}
                       >
                         <option value="pending_confirmation">Pending</option>
                         <option value="confirmed">Confirmed</option>
@@ -549,7 +553,7 @@ const handleAssignDriver = async (orderId, driverId) => {
                     <button className="btn-view" onClick={() => handleEdit(order)}>
                       👁️ View
                     </button>
-                    {order.status === 'pending_confirmation' && (
+                    {order.status === 'pending_confirmation' && user?.role === 'admin' && (
                       <button className="btn-confirm" onClick={() => handleConfirmOrder(order._id)}>
                         ✓ Confirm
                       </button>
@@ -663,14 +667,14 @@ const handleAssignDriver = async (orderId, driverId) => {
                 </div>
               )}
 
-              {/* Delivery Date and Time Section */}
               <div className="form-row">
                 <div className="form-group">
                   <label className="required">Delivery Date Start</label>
                   <input
                     type="date"
+                    name="deliveryDateStart"
                     value={formData.deliveryDateStart}
-                    onChange={handleDateStartChange}
+                    onChange={handleInputChange}
                     required
                     min={new Date().toISOString().split('T')[0]}
                   />
@@ -679,8 +683,9 @@ const handleAssignDriver = async (orderId, driverId) => {
                   <label>Delivery Date End (Optional)</label>
                   <input
                     type="date"
+                    name="deliveryDateEnd"
                     value={formData.deliveryDateEnd}
-                    onChange={handleDateEndChange}
+                    onChange={handleInputChange}
                     min={formData.deliveryDateStart || new Date().toISOString().split('T')[0]}
                   />
                   <small className="field-hint">Leave empty for single day delivery</small>
@@ -689,22 +694,23 @@ const handleAssignDriver = async (orderId, driverId) => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Delivery Time Start (Optional)</label>
+                  <label>Time From (Optional)</label>
                   <input
                     type="time"
+                    name="deliveryTimeStart"
                     value={formData.deliveryTimeStart}
-                    onChange={(e) => setFormData({...formData, deliveryTimeStart: e.target.value})}
+                    onChange={handleInputChange}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Delivery Time End (Optional)</label>
+                  <label>Time To (Optional)</label>
                   <input
                     type="time"
+                    name="deliveryTimeEnd"
                     value={formData.deliveryTimeEnd}
-                    onChange={(e) => setFormData({...formData, deliveryTimeEnd: e.target.value})}
+                    onChange={handleInputChange}
                   />
                 </div>
-                <small className="field-hint full-width">Leave time empty for "any time" delivery</small>
               </div>
 
               <div className="form-group">

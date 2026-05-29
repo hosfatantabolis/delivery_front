@@ -16,69 +16,170 @@ const DriverPanel = () => {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [activeTab, setActiveTab] = useState('calendar');
   const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [success, setSuccess] = useState('');
   const [stats, setStats] = useState({
     today: 0,
     week: 0,
     completed: 0,
     pending: 0
   });
-  const [calendarKey, setCalendarKey] = useState(0);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-const [refreshKey, setRefreshKey] = useState(0);
 
-  // In DriverPanel.js - replace the socket event handlers
-
-// In DriverPanel.js - restore proper socket handling
-
-useEffect(() => {
-  console.log('🟢 Setting up socket listeners');
-  fetchOrders();
-  
-  if (socket) {
-    const handleOrderAssigned = (data) => {
-      console.log('📦 order-assigned CALLBACK FIRED');
-      console.log('Order data:', data?.orderNumber);
-      fetchOrders();
-    };
+  // Helper: Get all dates between start and end date
+  const getDatesInRange = (startDate, endDate) => {
+    const dates = [];
+    const currentDate = new Date(startDate);
+    const end = new Date(endDate);
     
-    socket.on('order-assigned', handleOrderAssigned);
-    socket.on('order-updated', () => fetchOrders());
-    socket.on('order-created', () => fetchOrders());
+    currentDate.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
     
-    return () => {
-      socket.off('order-assigned', handleOrderAssigned);
-      socket.off('order-updated');
-      socket.off('order-created');
-    };
-  }
-}, [socket, user?.id]); // Keep user?.id here
+    while (currentDate <= end) {
+      dates.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return dates;
+  };
 
-const fetchOrders = async () => {
-  console.log('🔄 fetchOrders START');
-  try {
-    setLoading(true);
-    const res = await axios.get('http://localhost:5000/api/orders');
-    console.log('📦 API returned:', res.data.length, 'orders');
+  // Check if an order falls on a specific date (handles date ranges)
+  const isOrderOnDate = useCallback((order, date) => {
+    if (!order.deliveryDateStart) return false;
     
-    const driverOrders = res.data.filter(order => 
-      order.assignedDriver?._id === user?.id || order.assignedDriver === user?.id
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+    
+    const startDate = new Date(order.deliveryDateStart);
+    startDate.setHours(0, 0, 0, 0);
+    
+    // If no end date, check only start date
+    if (!order.deliveryDateEnd) {
+      return startDate.getTime() === checkDate.getTime();
+    }
+    
+    // If end date exists, check if date is within range
+    const endDate = new Date(order.deliveryDateEnd);
+    endDate.setHours(23, 59, 59, 999);
+    
+    return checkDate >= startDate && checkDate <= endDate;
+  }, []);
+
+  // Check if date is the start of a range
+  const isRangeStart = (order, date) => {
+    if (!order.deliveryDateStart) return false;
+    const startDate = new Date(order.deliveryDateStart);
+    const checkDate = new Date(date);
+    startDate.setHours(0, 0, 0, 0);
+    checkDate.setHours(0, 0, 0, 0);
+    return startDate.getTime() === checkDate.getTime();
+  };
+
+  // Check if date is the end of a range
+  const isRangeEnd = (order, date) => {
+    if (!order.deliveryDateEnd) return false;
+    const endDate = new Date(order.deliveryDateEnd);
+    const checkDate = new Date(date);
+    endDate.setHours(0, 0, 0, 0);
+    checkDate.setHours(0, 0, 0, 0);
+    return endDate.getTime() === checkDate.getTime();
+  };
+
+  // Get orders for a specific date
+  const getOrdersForDate = useCallback((date) => {
+    return orders.filter(order => isOrderOnDate(order, date));
+  }, [orders, isOrderOnDate]);
+
+  // Get orders for selected date
+  const getOrdersForSelectedDate = useCallback(() => {
+    return orders.filter(order => isOrderOnDate(order, selectedDate));
+  }, [orders, selectedDate, isOrderOnDate]);
+
+  // Custom tile content for calendar with timeline support
+  const tileContent = ({ date, view }) => {
+    if (view !== 'month') return null;
+    
+    const dayOrders = getOrdersForDate(date);
+    if (dayOrders.length === 0) return null;
+    
+    // Group orders by their visual representation type
+    const rangeOrders = dayOrders.filter(o => o.deliveryDateEnd && o.deliveryDateStart !== o.deliveryDateEnd);
+    const singleOrders = dayOrders.filter(o => !o.deliveryDateEnd || o.deliveryDateStart === o.deliveryDateEnd);
+    
+    return (
+      <div className="calendar-tile-content">
+        <div className="order-count-badge">{dayOrders.length}</div>
+        <div className="timeline-indicators">
+          {/* Range orders - show as timeline bars */}
+          {rangeOrders.map((order, idx) => {
+            const isStart = isRangeStart(order, date);
+            const isEnd = isRangeEnd(order, date);
+            let barClass = 'timeline-bar';
+            
+            if (isStart && isEnd) barClass += ' single-day';
+            else if (isStart) barClass += ' start';
+            else if (isEnd) barClass += ' end';
+            else barClass += ' middle';
+            
+            // Different colors for different priorities
+            let priorityClass = '';
+            if (order.priority === 'urgent') priorityClass = ' urgent';
+            else if (order.priority === 'high') priorityClass = ' high';
+            
+            return (
+              <div 
+                key={order._id} 
+                className={barClass + priorityClass}
+                title={`${order.orderNumber} (${order.priority}): ${order.client?.name}`}
+                style={{ 
+                  backgroundColor: getPriorityColor(order.priority),
+                  width: '100%'
+                }}
+              >
+                <span className="timeline-label">
+                  {isStart ? '▶' : isEnd ? '◼' : '─'}
+                </span>
+              </div>
+            );
+          })}
+          {/* Single orders - show as dots */}
+          {singleOrders.map((order, idx) => (
+            <div 
+              key={order._id} 
+              className="single-order-dot"
+              style={{ backgroundColor: getPriorityColor(order.priority) }}
+              title={`${order.orderNumber} (${order.priority}): ${order.client?.name}`}
+            >
+              <span className="dot-label">●</span>
+            </div>
+          ))}
+        </div>
+      </div>
     );
-    console.log('👤 Driver orders:', driverOrders.length);
-    
-    // Update state
-    setOrders(driverOrders);
-    calculateStats(driverOrders);
-    
-    // Force UI refresh
-    setRefreshKey(prev => prev + 1);
-    console.log('🔄 refreshKey updated to:', refreshKey + 1);
-    
-  } catch (error) {
-    console.error('Error fetching orders:', error);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
+  const getPriorityColor = (priority) => {
+    switch(priority) {
+      case 'urgent': return '#f44336';
+      case 'high': return '#ff9800';
+      default: return '#4caf50';
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get('http://localhost:5000/api/orders');
+      const driverOrders = res.data.filter(order => 
+        order.assignedDriver?._id === user?.id || order.assignedDriver === user?.id
+      );
+      setOrders(driverOrders);
+      calculateStats(driverOrders);
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const calculateStats = (driverOrders) => {
     const today = new Date().toDateString();
@@ -86,13 +187,14 @@ const fetchOrders = async () => {
     weekAgo.setDate(weekAgo.getDate() - 7);
     
     const todayOrders = driverOrders.filter(order => {
-      if (!order.timeWindow?.start) return false;
-      return new Date(order.timeWindow.start).toDateString() === today;
+      if (!order.deliveryDateStart) return false;
+      return isOrderOnDate(order, new Date());
     });
     
     const weekOrders = driverOrders.filter(order => {
-      if (!order.timeWindow?.start) return false;
-      return new Date(order.timeWindow.start) >= weekAgo;
+      if (!order.deliveryDateStart) return false;
+      const orderDate = new Date(order.deliveryDateStart);
+      return orderDate >= weekAgo;
     });
     
     const completedOrders = driverOrders.filter(order => 
@@ -111,84 +213,44 @@ const fetchOrders = async () => {
     });
   };
 
-// Check if an order falls on a specific date (handles date ranges)
-// Check if an order falls on a specific date (handles date ranges)
-const isOrderOnDate = (order, date) => {
-  if (!order.deliveryDateStart) return false;
-  
-  const startDate = new Date(order.deliveryDateStart);
-  startDate.setHours(0, 0, 0, 0);
-  
-  const checkDate = new Date(date);
-  checkDate.setHours(0, 0, 0, 0);
-  
-  // If no end date, check only start date
-  if (!order.deliveryDateEnd) {
-    return startDate.getTime() === checkDate.getTime();
-  }
-  
-  // If end date exists, check if date is within range
-  const endDate = new Date(order.deliveryDateEnd);
-  endDate.setHours(23, 59, 59, 999);
-  
-  return checkDate >= startDate && checkDate <= endDate;
-};
-
-
-  // Get orders for a specific date based on delivery time window
-const getOrdersForDate = (date) => {
-  return orders.filter(order => isOrderOnDate(order, date));
-};
-
-// Get orders for the selected date
-const getOrdersForSelectedDate = () => {
-  return orders.filter(order => isOrderOnDate(order, selectedDate));
-};
-
-  // Custom tile content for calendar
-  // Custom tile content for calendar with date range support
-const tileContent = useCallback(({ date, view }) => {
-  if (view === 'month') {
-    const dayOrders = getOrdersForDate(date);
-    if (dayOrders.length > 0) {
-      const deliveredCount = dayOrders.filter(o => o.status === 'delivered').length;
-      const inTransitCount = dayOrders.filter(o => o.status === 'in_transit').length;
-      const pendingCount = dayOrders.filter(o => o.status === 'assigned' || o.status === 'confirmed').length;
+  useEffect(() => {
+    fetchOrders();
+    
+    if (socket) {
+      const handleOrderUpdate = () => {
+        fetchOrders();
+      };
       
-      return (
-        <div className="calendar-tile">
-          <span className="order-count">{dayOrders.length}</span>
-          <div className="tile-status-icons">
-            {inTransitCount > 0 && <span className="tile-icon in-transit" title="In Transit">🚚</span>}
-            {deliveredCount > 0 && <span className="tile-icon delivered" title="Delivered">✅</span>}
-            {pendingCount > 0 && <span className="tile-icon pending" title="Pending">⏳</span>}
-          </div>
-        </div>
-      );
+      socket.on('order-updated', handleOrderUpdate);
+      socket.on('order-assigned', handleOrderUpdate);
+      socket.on('order-created', handleOrderUpdate);
+      
+      return () => {
+        socket.off('order-updated', handleOrderUpdate);
+        socket.off('order-assigned', handleOrderUpdate);
+        socket.off('order-created', handleOrderUpdate);
+      };
     }
-  }
-  return null;
-}, [orders, refreshTrigger]); // Add dependencies
+  }, [socket, user?.id]);
 
   const handleDateClick = (date) => {
     setSelectedDate(date);
     setActiveTab('orders');
   };
 
-const updateOrderStatus = async (orderId, newStatus) => {
-  try {
-    // Use the main order update endpoint (PUT /api/orders/:id) instead
-    const response = await axios.put(`http://localhost:5000/api/orders/${orderId}`, 
-      { status: newStatus }
-    );
-    await fetchOrders();
-    setShowStatusModal(false);
-    setSelectedOrder(null);
-  } catch (error) {
-    console.error('Error updating order status:', error);
-    alert(error.response?.data?.error || 'Failed to update order status');
-  }
-};
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await axios.put(`http://localhost:5000/api/orders/${orderId}`, { status: newStatus });
+      await fetchOrders();
+      setShowStatusModal(false);
+      setSelectedOrder(null);
+      setSuccess(`Order status updated to ${newStatus}`);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      alert(error.response?.data?.error || 'Failed to update order status');
+    }
+  };
 
   const getStatusColor = (status) => {
     const colors = {
@@ -235,51 +297,45 @@ const updateOrderStatus = async (orderId, newStatus) => {
     }
   };
 
-  const formatTimeWindow = (start, end) => {
-    if (!start && !end) return 'Not specified';
-    if (start && !end) return `From ${new Date(start).toLocaleString()}`;
-    if (!start && end) return `Until ${new Date(end).toLocaleString()}`;
-    return `${new Date(start).toLocaleString()} - ${new Date(end).toLocaleString()}`;
-  };
-
   const formatDeliveryPeriod = (order) => {
-  if (!order.deliveryDateStart) return 'Not specified';
-  
-  const startDate = new Date(order.deliveryDateStart).toLocaleDateString();
-  
-  if (!order.deliveryDateEnd) {
-    // Single day
-    let result = startDate;
+    if (!order.deliveryDateStart) return 'Not specified';
     
-    // Add time if specified
+    const startDate = new Date(order.deliveryDateStart).toLocaleDateString();
+    
+    if (!order.deliveryDateEnd || order.deliveryDateStart === order.deliveryDateEnd) {
+      let result = startDate;
+      if (order.deliveryTimeStart && order.deliveryTimeEnd) {
+        result += ` at ${order.deliveryTimeStart} - ${order.deliveryTimeEnd}`;
+      } else if (order.deliveryTimeStart) {
+        result += ` from ${order.deliveryTimeStart}`;
+      } else if (order.deliveryTimeEnd) {
+        result += ` until ${order.deliveryTimeEnd}`;
+      } else {
+        result += ` (any time)`;
+      }
+      return result;
+    }
+    
+    const endDate = new Date(order.deliveryDateEnd).toLocaleDateString();
+    let result = `${startDate} - ${endDate}`;
+    
     if (order.deliveryTimeStart && order.deliveryTimeEnd) {
       result += ` at ${order.deliveryTimeStart} - ${order.deliveryTimeEnd}`;
     } else if (order.deliveryTimeStart) {
       result += ` from ${order.deliveryTimeStart}`;
     } else if (order.deliveryTimeEnd) {
       result += ` until ${order.deliveryTimeEnd}`;
-    } else {
-      result += ` (any time)`;
     }
     
     return result;
-  }
-  
-  // Date range
-  const endDate = new Date(order.deliveryDateEnd).toLocaleDateString();
-  let result = `${startDate} - ${endDate}`;
-  
-  // Add time if specified
-  if (order.deliveryTimeStart && order.deliveryTimeEnd) {
-    result += ` at ${order.deliveryTimeStart} - ${order.deliveryTimeEnd}`;
-  } else if (order.deliveryTimeStart) {
-    result += ` from ${order.deliveryTimeStart}`;
-  } else if (order.deliveryTimeEnd) {
-    result += ` until ${order.deliveryTimeEnd}`;
-  }
-  
-  return result;
-};
+  };
+
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return null;
+    // Remove all non-digit characters
+    const digits = phone.replace(/\D/g, '');
+    return digits;
+  };
 
   const getNextStatuses = (currentStatus) => {
     switch(currentStatus) {
@@ -319,11 +375,16 @@ const updateOrderStatus = async (orderId, newStatus) => {
         </div>
         <div className="header-right">
           <Notifications />
+          <button onClick={fetchOrders} className="refresh-btn" title="Refresh orders">
+            🔄
+          </button>
           <button onClick={handleLogout} className="logout-btn">
             Logout
           </button>
         </div>
       </div>
+
+      {success && <div className="success-message">{success}</div>}
 
       {/* Stats Cards */}
       <div className="stats-grid">
@@ -363,7 +424,7 @@ const updateOrderStatus = async (orderId, newStatus) => {
           className={`tab-btn ${activeTab === 'calendar' ? 'active' : ''}`}
           onClick={() => setActiveTab('calendar')}
         >
-          📅 Calendar View
+          📅 Timeline Calendar
         </button>
         <button 
           className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
@@ -373,38 +434,50 @@ const updateOrderStatus = async (orderId, newStatus) => {
         </button>
       </div>
 
-      {/* Calendar View Tab */}
+      {/* Timeline Calendar Tab */}
       {activeTab === 'calendar' && (
         <div className="calendar-tab">
           <div className="calendar-container">
             <Calendar
-              key={`calendar-${refreshTrigger}`}  // Add this key
+              key={`calendar-${refreshTrigger}`}
               onChange={setSelectedDate}
               value={selectedDate}
               tileContent={tileContent}
               onClickDay={handleDateClick}
-              className="driver-calendar"
+              className="driver-calendar timeline-calendar"
             />
           </div>
           
           <div className="calendar-legend">
-            <h3>Legend</h3>
+            <h3>Timeline Legend</h3>
             <div className="legend-items">
               <div className="legend-item">
-                <span className="legend-badge">3</span>
-                <span>Number of orders on this day</span>
+                <div className="legend-bar start" style={{ backgroundColor: '#4caf50' }}></div>
+                <span>Start of range (▶)</span>
               </div>
               <div className="legend-item">
-                <span className="legend-icon">🚚</span>
-                <span>Order in transit</span>
+                <div className="legend-bar middle" style={{ backgroundColor: '#4caf50' }}></div>
+                <span>Middle of range (─)</span>
               </div>
               <div className="legend-item">
-                <span className="legend-icon">✅</span>
-                <span>Order delivered</span>
+                <div className="legend-bar end" style={{ backgroundColor: '#4caf50' }}></div>
+                <span>End of range (◼)</span>
               </div>
               <div className="legend-item">
-                <span className="legend-icon">⏳</span>
-                <span>Order pending</span>
+                <div className="legend-dot" style={{ backgroundColor: '#4caf50' }}></div>
+                <span>Single day order (●)</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-bar urgent" style={{ backgroundColor: '#f44336' }}></div>
+                <span>🔴 Urgent priority</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-bar high" style={{ backgroundColor: '#ff9800' }}></div>
+                <span>🟠 High priority</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-bar" style={{ backgroundColor: '#4caf50' }}></div>
+                <span>🟢 Normal priority</span>
               </div>
             </div>
           </div>
@@ -464,21 +537,61 @@ const updateOrderStatus = async (orderId, newStatus) => {
                       <span className="detail-value">{order.client?.name}</span>
                     </div>
                     <div className="detail-row">
-                      <span className="detail-label">Phone:</span>
-                      <span className="detail-value"><a href={`tel:${order.client?.phone}`}>{order.client?.phone}</a></span>
+                      <span className="detail-label">Client Phone:</span>
+                      <span className="detail-value">
+                        {order.client?.phone ? (
+                          <a href={`tel:${formatPhoneNumber(order.client.phone)}`} className="phone-link">
+                            📞 {order.client.phone}
+                          </a>
+                        ) : (
+                          'No phone'
+                        )}
+                      </span>
                     </div>
                     <div className="detail-row">
                       <span className="detail-label">Address:</span>
-                      <span className="detail-value"><a href={`yandexnavi://map_search?text=`+order.deliveryAddress}>{order.deliveryAddress}</a></span>
-                    </div>
-                    <div className="detail-row">
-                      <span className="detail-label">Delivery Window:</span>
-                      <span className="detail-value">{formatTimeWindow(order.timeWindow?.start, order.timeWindow?.end)}</span>
+                      <span className="detail-value">{order.deliveryAddress}</span>
                     </div>
                     <div className="detail-row">
                       <span className="detail-label">Delivery Period:</span>
-                      <span className="detail-value">{formatDeliveryPeriod(order)}</span>
+                      <span className="detail-value delivery-period">
+                        {formatDeliveryPeriod(order)}
+                        {order.deliveryDateEnd && order.deliveryDateStart !== order.deliveryDateEnd && (
+                          <span className="range-badge">📅 Multi-day</span>
+                        )}
+                      </span>
                     </div>
+                    
+                    {/* Order Creator Info - NEW SECTION */}
+                    <div className="creator-section">
+                      <div className="detail-row creator-info">
+                        <span className="detail-label">Order Creator:</span>
+                        <span className="detail-value">
+                          👤 {order.createdBy?.name || 'Unknown'}
+                        </span>
+                      </div>
+                      {order.createdBy?.phone && (
+                        <div className="detail-row">
+                          <span className="detail-label">Creator Phone:</span>
+                          <span className="detail-value">
+                            <a href={`tel:${formatPhoneNumber(order.createdBy.phone)}`} className="phone-link creator-phone">
+                              📞 {order.createdBy.phone}
+                            </a>
+                          </span>
+                        </div>
+                      )}
+                      {order.createdBy?.email && (
+                        <div className="detail-row">
+                          <span className="detail-label">Creator Email:</span>
+                          <span className="detail-value">
+                            <a href={`mailto:${order.createdBy.email}`} className="email-link">
+                              ✉️ {order.createdBy.email}
+                            </a>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
                     {order.notes && (
                       <div className="detail-row">
                         <span className="detail-label">Notes:</span>
@@ -528,8 +641,23 @@ const updateOrderStatus = async (orderId, newStatus) => {
               <div className="order-summary">
                 <p><strong>Order:</strong> {selectedOrder.orderNumber}</p>
                 <p><strong>Client:</strong> {selectedOrder.client?.name}</p>
+                <p><strong>Client Phone:</strong> 
+                  {selectedOrder.client?.phone ? (
+                    <a href={`tel:${formatPhoneNumber(selectedOrder.client.phone)}`} className="phone-link">
+                      {selectedOrder.client.phone}
+                    </a>
+                  ) : 'No phone'}
+                </p>
                 <p><strong>Address:</strong> {selectedOrder.deliveryAddress}</p>
-                <p><strong>Delivery Window:</strong> {formatTimeWindow(selectedOrder.timeWindow?.start, selectedOrder.timeWindow?.end)}</p>
+                <p><strong>Delivery Period:</strong> {formatDeliveryPeriod(selectedOrder)}</p>
+                <p><strong>Created by:</strong> {selectedOrder.createdBy?.name || 'Unknown'}</p>
+                {selectedOrder.createdBy?.phone && (
+                  <p><strong>Creator Phone:</strong> 
+                    <a href={`tel:${formatPhoneNumber(selectedOrder.createdBy.phone)}`} className="phone-link">
+                      {selectedOrder.createdBy.phone}
+                    </a>
+                  </p>
+                )}
               </div>
               <div className="status-options">
                 <h4>Change status to:</h4>

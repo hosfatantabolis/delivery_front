@@ -49,6 +49,7 @@ const UsersManager = () => {
           <tr>
             <th>Name</th>
             <th>Email</th>
+            <th>Phone</th> 
             <th>Role</th>
             <th>Status</th>
             <th>Created</th>
@@ -60,6 +61,7 @@ const UsersManager = () => {
             <tr key={user._id}>
               <td>{user.name}</td>
               <td>{user.email}</td>
+              <td>{user.phone || '-'}</td>
               <td>
                 <span style={{ 
                   background: user.role === 'admin' ? '#f44336' : user.role === 'manager' ? '#4caf50' : '#2196f3',

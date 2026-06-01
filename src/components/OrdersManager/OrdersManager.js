@@ -32,6 +32,51 @@ const OrdersManager = () => {
     priority: 'normal'
   });
 
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [reassigningOrder, setReassigningOrder] = useState(null);
+  const [selectedNewDriver, setSelectedNewDriver] = useState('');
+  const [reassignReason, setReassignReason] = useState('');
+  const [reassigning, setReassigning] = useState(false);
+
+
+  // Add this new function for reassigning already assigned drivers
+const handleReassignDriver = async (orderId, newDriverId) => {
+  if (!newDriverId || newDriverId === '') {
+    setError('Please select a driver');
+    setTimeout(() => setError(''), 3000);
+    return;
+  }
+  
+  setReassigning(true);
+  try {
+    await axios.put(`http://localhost:5000/api/orders/${orderId}/reassign`, { 
+      newDriverId: newDriverId,
+      reason: reassignReason || 'Admin reassignment'
+    });
+    setSuccess(`Order reassigned to new driver successfully!`);
+    fetchOrders();
+    setShowReassignModal(false);
+    setReassigningOrder(null);
+    setSelectedNewDriver('');
+    setReassignReason('');
+    setTimeout(() => setSuccess(''), 3000);
+  } catch (error) {
+    console.error('Error reassigning order:', error);
+    setError(error.response?.data?.error || 'Failed to reassign order');
+    setTimeout(() => setError(''), 3000);
+  } finally {
+    setReassigning(false);
+  }
+};
+
+// Add function to open reassign modal
+const openReassignModal = (order) => {
+  setReassigningOrder(order);
+  setSelectedNewDriver(order.assignedDriver?._id || '');
+  setReassignReason('');
+  setShowReassignModal(true);
+};
+
   // Fetch orders - filtered by role
   const fetchOrders = async () => {
     try {
@@ -509,9 +554,20 @@ const fetchClients = async () => {
                       <span className="range-badge">📅 Multi-day</span>
                     )}
                   </td>
-                  <td>
+                  <td className="driver-cell">
                     {order.assignedDriver ? (
-                      <span className="driver-name">{order.assignedDriver.name}</span>
+                      <div className="driver-info">
+                        <span className="driver-name">{order.assignedDriver.name}</span>
+                        {user?.role === 'admin' && (
+                          <button 
+                            className="reassign-driver-btn"
+                            onClick={() => openReassignModal(order)}
+                            title="Reassign to different driver"
+                          >
+                            🔄 Reassign
+                          </button>
+                        )}
+                      </div>
                     ) : (
                       user?.role === 'admin' && (
                         <select 
@@ -746,6 +802,73 @@ const fetchClients = async () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reassign Driver Modal */}
+      {showReassignModal && reassigningOrder && (
+        <div className="modal-overlay" onClick={() => !reassigning && setShowReassignModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Reassign Order #{reassigningOrder.orderNumber}</h3>
+              <button className="close-modal" onClick={() => setShowReassignModal(false)}>×</button>
+            </div>
+
+            <div className="modal-body">
+              <div className="reassign-order-info">
+                <p><strong>Client:</strong> {reassigningOrder.client?.name}</p>
+                <p><strong>Current Driver:</strong> {reassigningOrder.assignedDriver?.name}</p>
+                <p><strong>Delivery Address:</strong> {reassigningOrder.deliveryAddress}</p>
+                <p><strong>Delivery Period:</strong> {formatDeliveryPeriod(reassigningOrder)}</p>
+              </div>
+
+              <div className="form-group">
+                <label className="required">Select New Driver</label>
+                <select
+                  value={selectedNewDriver}
+                  onChange={(e) => setSelectedNewDriver(e.target.value)}
+                  disabled={reassigning}
+                  required
+                >
+                  <option value="">-- Select a driver --</option>
+                  {drivers.map(driver => (
+                    <option key={driver._id} value={driver._id}>
+                      {driver.name} {driver.phone ? `(${driver.phone})` : ''}
+                      {driver.currentLoad !== undefined && ` - ${driver.currentLoad} active deliveries`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Reason for Reassignment (optional)</label>
+                <textarea
+                  value={reassignReason}
+                  onChange={(e) => setReassignReason(e.target.value)}
+                  disabled={reassigning}
+                  placeholder="e.g., Driver unavailable, route optimization, etc."
+                  rows="3"
+                />
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button 
+                className="cancel-btn" 
+                onClick={() => setShowReassignModal(false)}
+                disabled={reassigning}
+              >
+                Cancel
+              </button>
+              <button 
+                className="save-btn" 
+                onClick={() => handleReassignDriver(reassigningOrder._id, selectedNewDriver)}
+                disabled={reassigning || !selectedNewDriver}
+              >
+                {reassigning ? 'Reassigning...' : 'Confirm Reassignment'}
+              </button>
+            </div>
           </div>
         </div>
       )}

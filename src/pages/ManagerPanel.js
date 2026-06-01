@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import Notifications from '../components/Notifications';
-import ClientsManager from '../components/ClientsManager';
-import OrdersManager from '../components/OrdersManager';
+import Notifications from '../components/Notifications/Notifications';
+import ClientsManager from '../components/ClientsManager/ClientsManager';
+import OrdersManager from '../components/OrdersManager/OrdersManager';
 
 const ManagerPanel = () => {
   const { user, logout, socket } = useAuth();

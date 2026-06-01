@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
-import Notifications from '../components/Notifications';
+import Notifications from '../components/Notifications/Notifications';
 import './DriverPanel.css';
 
 const DriverPanel = () => {

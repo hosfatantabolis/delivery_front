@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import Notifications from '../components/Notifications';
+import Notifications from '../components/Notifications/Notifications';
 import axios from 'axios';
-import ClientsManager from '../components/ClientsManager';
+import ClientsManager from '../components/ClientsManager/ClientsManager';
 import DriversManager from '../components/DriversManager';
-import OrdersManager from '../components/OrdersManager';
+import OrdersManager from '../components/OrdersManager/OrdersManager';
 import ConfirmOrders from '../components/ConfirmOrders';
 import UsersManager from '../components/UsersManager';
 

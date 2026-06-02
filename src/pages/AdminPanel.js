@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Notifications from '../components/Notifications/Notifications';
 import axios from 'axios';
@@ -12,9 +12,21 @@ import UsersManager from '../components/UsersManager';
 const AdminPanel = () => {
   const { user, logout, socket } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('confirm');
+  const setActiveTab = (tab) => {
+    // Create a new URLSearchParams object to preserve any other existing query params
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tab);
+    setSearchParams(params);
+  };
   const [pendingOrders, setPendingOrders] = useState([]);
-  
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validTabs = ['confirm', 'drivers', 'clients', 'orders', 'users'];
+
+
+  const activeTab = validTabs.includes(searchParams.get('tab')) 
+    ? searchParams.get('tab') 
+    : 'confirm';
+
   useEffect(() => {
     if (!user) return;
     fetchPendingOrders();

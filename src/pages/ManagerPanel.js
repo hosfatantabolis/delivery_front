@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import Notifications from '../components/Notifications/Notifications';
@@ -9,10 +9,22 @@ import OrdersManager from '../components/OrdersManager/OrdersManager';
 const ManagerPanel = () => {
   const { user, logout, socket } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('orders');
+  const [searchParams, setSearchParams] = useSearchParams();
+  
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [myOrdersCount, setMyOrdersCount] = useState(0);
+  const validTabs = ['orders', 'clients'];
 
+
+  const activeTab = validTabs.includes(searchParams.get('tab')) 
+    ? searchParams.get('tab') 
+    : 'orders'; // Default to 'orders'
+    const setActiveTab = (tab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tab);
+    setSearchParams(params);
+  };
+  
   // Fetch counts for badges
   const fetchOrderCounts = async () => {
     try {

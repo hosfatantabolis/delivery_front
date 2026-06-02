@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import Calendar from 'react-calendar';
@@ -10,11 +10,24 @@ import './DriverPanel.css';
 const DriverPanel = () => {
   const { user, logout, socket } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
-  const [activeTab, setActiveTab] = useState('calendar');
+  
+  const validTabs = ['calendar', 'orders'];
+  const activeTab = validTabs.includes(searchParams.get('tab')) 
+      ? searchParams.get('tab') 
+      : 'calendar'; // Default to 'calendar'
+
+    // 3. URL updater function
+  const setActiveTab = (tab) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('tab', tab);
+      setSearchParams(params);
+  };
+
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [success, setSuccess] = useState('');

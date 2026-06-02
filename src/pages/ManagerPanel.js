@@ -5,6 +5,7 @@ import axios from 'axios';
 import Notifications from '../components/Notifications/Notifications';
 import ClientsManager from '../components/ClientsManager/ClientsManager';
 import OrdersManager from '../components/OrdersManager/OrdersManager';
+import Header from '../components/Header/Header';
 
 const ManagerPanel = () => {
   const { user, logout, socket } = useAuth();
@@ -24,7 +25,7 @@ const ManagerPanel = () => {
     params.set('tab', tab);
     setSearchParams(params);
   };
-  
+
   // Fetch counts for badges
   const fetchOrderCounts = async () => {
     try {
@@ -71,7 +72,7 @@ const ManagerPanel = () => {
 
   return (
     <div className="manager-panel">
-      <div className="header">
+      {/* <div className="header">
         <h1>Manager Dashboard</h1>
         <div className="header-buttons">
           <Notifications />
@@ -80,8 +81,9 @@ const ManagerPanel = () => {
             Logout
           </button>
         </div>
-      </div>
-
+      </div> */}
+      <Header />
+      
       <div className="tabs">
         <button 
           className={activeTab === 'orders' ? 'active' : ''}

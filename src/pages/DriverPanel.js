@@ -6,6 +6,7 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import Notifications from '../components/Notifications/Notifications';
 import './DriverPanel.css';
+import Header from '../components/Header/Header';
 
 const DriverPanel = () => {
   const { user, logout, socket } = useAuth();
@@ -368,17 +369,17 @@ const DriverPanel = () => {
     navigate('/login');
   };
 
-  if (loading) return <div className="loading-state">Loading dashboard...</div>;
+  if (loading) return <div className="loading-state">Загрузка панели управления...</div>;
 
   return (
     <div className="driver-panel">
       {/* Header */}
-      <div className="driver-header">
+      {/* <div className="driver-header">
         <div className="header-left">
           <h1>Driver Dashboard</h1>
           <div className="driver-info">
             <span className="driver-name">👨‍✈️ {user?.name}</span>
-            {user?.vehicleInfo && (
+            {user.vehicleInfo && (
               <span className="vehicle-info">🚚 {user.vehicleInfo}</span>
             )}
             {user?.assignedZone && (
@@ -395,7 +396,8 @@ const DriverPanel = () => {
             Logout
           </button>
         </div>
-      </div>
+      </div> */}
+      <Header />
 
       {success && <div className="success-message">{success}</div>}
 

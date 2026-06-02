@@ -8,6 +8,7 @@ import DriversManager from '../components/DriversManager';
 import OrdersManager from '../components/OrdersManager/OrdersManager';
 import ConfirmOrders from '../components/ConfirmOrders';
 import UsersManager from '../components/UsersManager';
+import Header from '../components/Header/Header';
 
 const AdminPanel = () => {
   const { user, logout, socket } = useAuth();
@@ -58,22 +59,23 @@ const AdminPanel = () => {
     navigate('/login');
   };
   
-  if (!user || user.role !== 'admin') return <div>Access Denied</div>;
+  if (!user || user.role !== 'admin') return <div>Доступ запрещен</div>;
   
   return (
     <div className="admin-panel">
-      <div className="admin-header">
+      {/* <div className="admin-header">
         <h1>Admin Dashboard</h1>
         <div className="header-buttons">
            <Notifications /> 
           <button onClick={() => navigate('/register')} className="register-nav-btn">
-            + Create New User
+            + Создать пользователя
           </button>
           <button onClick={handleLogout} className="logout-btn">
-            Logout
+            Выход
           </button>
         </div>
-      </div>
+      </div> */}
+      <Header />
       
       <div className="tabs">
         <button 

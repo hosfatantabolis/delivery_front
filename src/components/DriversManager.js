@@ -73,7 +73,7 @@ const DriversManager = () => {
         };
         
         await axios.put(`http://localhost:5000/api/users/drivers/${editingDriver._id}`, updateData);
-        setSuccess('Driver updated successfully!');
+        setSuccess('Данные водителя успешно обновлены!');
       } else {
         // Create new driver
         const driverData = {
@@ -86,7 +86,7 @@ const DriversManager = () => {
         };
         
         await axios.post('http://localhost:5000/api/users/drivers', driverData);
-        setSuccess('Driver created successfully!');
+        setSuccess('Пользователь с привилегиями водителя успешно создан');
       }
       
       // Reset form and refresh list
@@ -97,7 +97,7 @@ const DriversManager = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error saving driver:', error);
-      setError(error.response?.data?.error || 'Failed to save driver');
+      setError(error.response?.data?.error || 'Не удалось сохранить');
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -121,12 +121,12 @@ const DriversManager = () => {
     if (window.confirm('Are you sure you want to deactivate this driver?')) {
       try {
         await axios.delete(`http://localhost:5000/api/users/drivers/${driverId}`);
-        setSuccess('Driver deactivated successfully!');
+        setSuccess('Успешная деактивация пользователя');
         fetchDrivers();
         setTimeout(() => setSuccess(''), 3000);
       } catch (error) {
         console.error('Error deactivating driver:', error);
-        setError(error.response?.data?.error || 'Failed to deactivate driver');
+        setError(error.response?.data?.error || 'Неудачная деактивация пользователя');
         setTimeout(() => setError(''), 3000);
       }
     }
@@ -135,12 +135,12 @@ const DriversManager = () => {
   const handleActivate = async (driverId) => {
     try {
       await axios.put(`http://localhost:5000/api/users/drivers/${driverId}`, { isActive: true });
-      setSuccess('Driver activated successfully!');
+      setSuccess('Успешная деактивация пользователя');
       fetchDrivers();
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      console.error('Error activating driver:', error);
-      setError(error.response?.data?.error || 'Failed to activate driver');
+      console.error('Неудачная деактивация пользователя:', error);
+      setError(error.response?.data?.error || 'Неудачная деактивация пользователя');
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -163,19 +163,19 @@ const DriversManager = () => {
 
   const getStatusBadge = (isActive) => {
     return isActive 
-      ? <span className="status-badge active">Active</span>
-      : <span className="status-badge inactive">Inactive</span>;
+      ? <span className="status-badge active">Действующий</span>
+      : <span className="status-badge inactive">Недействующий</span>;
   };
 
-  if (loading) return <div className="loading">Loading drivers...</div>;
+  if (loading) return <div className="loading">Загрузка водителей...</div>;
 
   return (
     <div className="drivers-manager">
       <div className="section-header">
-        <h2>Manage Drivers</h2>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
-          + Add New Driver
-        </button>
+        <h2>Управление водителями</h2>
+        {/* <button onClick={() => setShowModal(true)} className="btn-primary">
+          + Добавить водителя
+        </button> */}
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -183,15 +183,15 @@ const DriversManager = () => {
 
       <div className="drivers-stats">
         <div className="stat-card">
-          <h3>Total Drivers</h3>
+          <h3>Всего водителей</h3>
           <p>{drivers.length}</p>
         </div>
         <div className="stat-card">
-          <h3>Active Drivers</h3>
+          <h3>Действующие</h3>
           <p>{drivers.filter(d => d.isActive).length}</p>
         </div>
         <div className="stat-card">
-          <h3>Inactive Drivers</h3>
+          <h3>Недействующие</h3>
           <p>{drivers.filter(d => !d.isActive).length}</p>
         </div>
       </div>
@@ -200,20 +200,20 @@ const DriversManager = () => {
         <table className="drivers-table">
           <thead>
             <tr>
-              <th>Name</th>
+              <th>Имя</th>
               <th>Email</th>
-              <th>Phone</th>
-              <th>Vehicle Info</th>
-              <th>Assigned Zone</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th>Actions</th>
+              <th>Телефон</th>
+              <th>Информация о ТС</th>
+              <th>Зона</th>
+              <th>Статус</th>
+              <th>Зарегистирован</th>
+              <th>Действия</th>
             </tr>
           </thead>
           <tbody>
             {drivers.length === 0 ? (
               <tr>
-                <td colSpan="8" className="no-data">No drivers found</td>
+                <td colSpan="8" className="no-data">Не найдено водителей</td>
               </tr>
             ) : (
               drivers.map(driver => (
@@ -241,7 +241,7 @@ const DriversManager = () => {
                       className="btn-edit"
                       title="Edit driver"
                     >
-                      ✏️ Edit
+                      ✏️ Редактировать
                     </button>
                     {driver.isActive ? (
                       <button 
@@ -249,7 +249,7 @@ const DriversManager = () => {
                         className="btn-delete"
                         title="Deactivate driver"
                       >
-                        🔴 Deactivate
+                        🔴 Деактивировать
                       </button>
                     ) : (
                       <button 
@@ -257,7 +257,7 @@ const DriversManager = () => {
                         className="btn-activate"
                         title="Activate driver"
                       >
-                        🟢 Activate
+                        🟢 Активировать
                       </button>
                     )}
                   </td>
@@ -269,7 +269,7 @@ const DriversManager = () => {
       </div>
 
       {/* Modal for Create/Edit Driver */}
-      {showModal && (
+      {/* {showModal && (
         <div className="modal-overlay" onClick={resetForm}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -396,7 +396,7 @@ const DriversManager = () => {
             </form>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

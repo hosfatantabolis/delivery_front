@@ -152,26 +152,26 @@ body {
   border-bottom: 2px solid #667eea;
 }
 
-.orders-table {
+/* .orders-table {
   width: 100%;
   background: white;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
+}*/
 
-.orders-table th,
-.orders-table td {
+/* .orders-table th, */
+.orders-table tr {
   padding: 12px;
   text-align: left;
   border-bottom: 1px solid #e0e0e0;
 }
 
-.orders-table th {
+/* .orders-table th {
   background: #f8f9fa;
   font-weight: 600;
   color: #333;
-}
+} */
 
 button {
   padding: 6px 12px;

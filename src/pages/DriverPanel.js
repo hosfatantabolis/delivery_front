@@ -40,6 +40,20 @@ const DriverPanel = () => {
     pending: 0,
   });
 
+  const getOrderTypeLabel = (type) => {
+    switch (type) {
+      case 'delivery':
+        return 'Доставка';
+      case 'collection':
+        return 'Забор';
+      case 'both':
+        return 'Оба';
+      case 'complicated':
+        return 'Всё сложно';
+      default:
+        return type;
+    }
+  };
   // Helper: Get all dates between start and end date
   // const getDatesInRange = (startDate, endDate) => {
   //   const dates = [];
@@ -596,7 +610,8 @@ const DriverPanel = () => {
                         className="order-type-badge"
                         data-type={order.orderType}
                       >
-                        {getOrderTypeIcon(order.orderType)} {order.orderType}
+                        {getOrderTypeIcon(order.orderType)}{' '}
+                        {getOrderTypeLabel(order.orderType)}
                       </span>
                       <span
                         className="priority-badge"
@@ -640,7 +655,7 @@ const DriverPanel = () => {
                     <div className="detail-row">
                       <span className="detail-label">Адрес:</span>
                       <span className="detail-value">
-                        {order.deliveryAddress}
+                        <a href="yandexnavi://">{order.deliveryAddress}</a>
                       </span>
                     </div>
                     <div className="detail-row">

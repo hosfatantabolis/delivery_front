@@ -13,7 +13,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .header-left h1 {
@@ -28,7 +28,9 @@
   flex-wrap: wrap;
 }
 
-.driver-name, .vehicle-info, .zone-info {
+.driver-name,
+.vehicle-info,
+.zone-info {
   padding: 4px 12px;
   background: #f0f4ff;
   border-radius: 20px;
@@ -67,7 +69,7 @@
   display: flex;
   align-items: center;
   gap: 15px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s;
 }
 
@@ -123,7 +125,7 @@
   background: white;
   border-radius: 12px;
   padding: 30px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .calendar-container {
@@ -226,7 +228,7 @@
   background: white;
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .selected-date-header {
@@ -274,7 +276,7 @@
 }
 
 .order-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
 
@@ -292,6 +294,12 @@
   align-items: center;
   gap: 8px;
   font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .order-number > strong {
+    font-size: 10px;
+  }
 }
 
 .order-icon {
@@ -419,7 +427,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
@@ -519,38 +527,38 @@
   .driver-panel {
     padding: 12px;
   }
-  
+
   .driver-header {
     flex-direction: column;
     gap: 15px;
     text-align: center;
   }
-  
+
   .driver-info {
     justify-content: center;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr 1fr;
   }
-  
+
   .driver-tabs {
     flex-direction: column;
   }
-  
+
   .detail-row {
     flex-direction: column;
     gap: 4px;
   }
-  
+
   .detail-label {
     min-width: auto;
   }
-  
+
   .calendar-container {
     overflow-x: auto;
   }
-  
+
   .driver-calendar {
     min-width: 350px;
   }
@@ -564,7 +572,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .header-left h1 {
@@ -653,22 +661,22 @@
   margin-left: 8px;
 }
 
-.order-type-badge[data-type="delivery"] {
+.order-type-badge[data-type='delivery'] {
   background: #e3f2fd;
   color: #1976d2;
 }
 
-.order-type-badge[data-type="collection"] {
+.order-type-badge[data-type='collection'] {
   background: #fff3e0;
   color: #f57c00;
 }
 
-.order-type-badge[data-type="both"] {
+.order-type-badge[data-type='both'] {
   background: #e8f5e9;
   color: #388e3c;
 }
 
-.order-type-badge[data-type="complicated"] {
+.order-type-badge[data-type='complicated'] {
   background: #ffebee;
   color: #d32f2f;
 }
@@ -685,17 +693,17 @@
   margin-left: 8px;
 }
 
-.priority-badge[data-priority="urgent"] {
+.priority-badge[data-priority='urgent'] {
   background: #ffebee;
   color: #f44336;
 }
 
-.priority-badge[data-priority="high"] {
+.priority-badge[data-priority='high'] {
   background: #fff3e0;
   color: #ff9800;
 }
 
-.priority-badge[data-priority="normal"] {
+.priority-badge[data-priority='normal'] {
   background: #e8f5e9;
   color: #4caf50;
 }
@@ -831,7 +839,7 @@
   transform: translateY(-50%);
   font-size: 8px;
   color: white;
-  text-shadow: 0 0 1px rgba(0,0,0,0.5);
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
 }
 
 /* Single order dot */
@@ -939,7 +947,8 @@
 }
 
 /* Phone and Email Links */
-.phone-link, .email-link {
+.phone-link,
+.email-link {
   color: #2196f3;
   text-decoration: none;
   display: inline-flex;
@@ -950,7 +959,8 @@
   transition: all 0.2s;
 }
 
-.phone-link:hover, .email-link:hover {
+.phone-link:hover,
+.email-link:hover {
   background: #e3f2fd;
   text-decoration: underline;
 }
@@ -983,12 +993,12 @@
   padding: 16px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s;
 }
 
 .order-card:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 /* Modal phone links */

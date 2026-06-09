@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
-import axios from "axios";
-import Calendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 // import Notifications from '../components/Notifications/Notifications';
-import "./DriverPanel.css";
-import Header from "../components/Header/Header";
+import './DriverPanel.css';
+import Header from '../components/Header/Header';
+import OrderStats from '../components/OrderStats/OrderStats';
 
 const DriverPanel = () => {
   const { user, socket } = useAuth();
@@ -17,21 +18,21 @@ const DriverPanel = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
 
-  const validTabs = ["calendar", "orders"];
-  const activeTab = validTabs.includes(searchParams.get("tab"))
-    ? searchParams.get("tab")
-    : "calendar"; // Default to 'calendar'
+  const validTabs = ['calendar', 'orders'];
+  const activeTab = validTabs.includes(searchParams.get('tab'))
+    ? searchParams.get('tab')
+    : 'calendar'; // Default to 'calendar'
 
   // 3. URL updater function
   const setActiveTab = (tab) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", tab);
+    params.set('tab', tab);
     setSearchParams(params);
   };
 
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [success, setSuccess] = useState("");
+  const [success, setSuccess] = useState('');
   const [stats, setStats] = useState({
     today: 0,
     week: 0,
@@ -112,7 +113,7 @@ const DriverPanel = () => {
 
   // Custom tile content for calendar with timeline support
   const tileContent = ({ date, view }) => {
-    if (view !== "month") return null;
+    if (view !== 'month') return null;
 
     const dayOrders = getOrdersForDate(date);
     if (dayOrders.length === 0) return null;
@@ -126,24 +127,24 @@ const DriverPanel = () => {
     );
 
     return (
-      <div className='calendar-tile-content'>
-        <div className='order-count-badge'>{dayOrders.length}</div>
-        <div className='timeline-indicators'>
+      <div className="calendar-tile-content">
+        <div className="order-count-badge">{dayOrders.length}</div>
+        <div className="timeline-indicators">
           {/* Range orders - show as timeline bars */}
           {rangeOrders.map((order, idx) => {
             const isStart = isRangeStart(order, date);
             const isEnd = isRangeEnd(order, date);
-            let barClass = "timeline-bar";
+            let barClass = 'timeline-bar';
 
-            if (isStart && isEnd) barClass += " single-day";
-            else if (isStart) barClass += " start";
-            else if (isEnd) barClass += " end";
-            else barClass += " middle";
+            if (isStart && isEnd) barClass += ' single-day';
+            else if (isStart) barClass += ' start';
+            else if (isEnd) barClass += ' end';
+            else barClass += ' middle';
 
             // Different colors for different priorities
-            let priorityClass = "";
-            if (order.priority === "urgent") priorityClass = " urgent";
-            else if (order.priority === "high") priorityClass = " high";
+            let priorityClass = '';
+            if (order.priority === 'urgent') priorityClass = ' urgent';
+            else if (order.priority === 'high') priorityClass = ' high';
 
             return (
               <div
@@ -152,11 +153,11 @@ const DriverPanel = () => {
                 title={`${order.orderNumber} (${order.priority}): ${order.client?.name}`}
                 style={{
                   backgroundColor: getPriorityColor(order.priority),
-                  width: "100%",
+                  width: '100%',
                 }}
               >
-                <span className='timeline-label'>
-                  {isStart ? "▶" : isEnd ? "◼" : "─"}
+                <span className="timeline-label">
+                  {isStart ? '▶' : isEnd ? '◼' : '─'}
                 </span>
               </div>
             );
@@ -165,11 +166,11 @@ const DriverPanel = () => {
           {singleOrders.map((order, idx) => (
             <div
               key={order._id}
-              className='single-order-dot'
+              className="single-order-dot"
               style={{ backgroundColor: getPriorityColor(order.priority) }}
               title={`${order.orderNumber} (${order.priority}): ${order.client?.name}`}
             >
-              <span className='dot-label'>●</span>
+              <span className="dot-label">●</span>
             </div>
           ))}
         </div>
@@ -179,19 +180,19 @@ const DriverPanel = () => {
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case "urgent":
-        return "#f44336";
-      case "high":
-        return "#ff9800";
+      case 'urgent':
+        return '#f44336';
+      case 'high':
+        return '#ff9800';
       default:
-        return "#4caf50";
+        return '#4caf50';
     }
   };
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/orders");
+      const res = await axios.get('http://localhost:5000/api/orders');
       const driverOrders = res.data.filter(
         (order) =>
           order.assignedDriver?._id === user?.id ||
@@ -201,7 +202,7 @@ const DriverPanel = () => {
       calculateStats(driverOrders);
       setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
-      console.error("Error fetching orders:", error);
+      console.error('Error fetching orders:', error);
     } finally {
       setLoading(false);
     }
@@ -224,11 +225,11 @@ const DriverPanel = () => {
     });
 
     const completedOrders = driverOrders.filter(
-      (order) => order.status === "delivered",
+      (order) => order.status === 'delivered',
     );
 
     const pendingOrders = driverOrders.filter(
-      (order) => order.status !== "delivered" && order.status !== "cancelled",
+      (order) => order.status !== 'delivered' && order.status !== 'cancelled',
     );
 
     setStats({
@@ -247,21 +248,21 @@ const DriverPanel = () => {
         fetchOrders();
       };
 
-      socket.on("order-updated", handleOrderUpdate);
-      socket.on("order-assigned", handleOrderUpdate);
-      socket.on("order-created", handleOrderUpdate);
+      socket.on('order-updated', handleOrderUpdate);
+      socket.on('order-assigned', handleOrderUpdate);
+      socket.on('order-created', handleOrderUpdate);
 
       return () => {
-        socket.off("order-updated", handleOrderUpdate);
-        socket.off("order-assigned", handleOrderUpdate);
-        socket.off("order-created", handleOrderUpdate);
+        socket.off('order-updated', handleOrderUpdate);
+        socket.off('order-assigned', handleOrderUpdate);
+        socket.off('order-created', handleOrderUpdate);
       };
     }
   }, [socket, user?.id]);
 
   const handleDateClick = (date) => {
     setSelectedDate(date);
-    setActiveTab("orders");
+    setActiveTab('orders');
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
@@ -273,77 +274,77 @@ const DriverPanel = () => {
       setShowStatusModal(false);
       setSelectedOrder(null);
       setSuccess(`Order status updated to ${newStatus}`);
-      setTimeout(() => setSuccess(""), 3000);
+      setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      console.error("Error updating order status:", error);
-      alert(error.response?.data?.error || "Failed to update order status");
+      console.error('Error updating order status:', error);
+      alert(error.response?.data?.error || 'Failed to update order status');
     }
   };
 
   const getStatusColor = (status) => {
     const colors = {
-      pending_confirmation: "#ff9800",
-      confirmed: "#2196f3",
-      assigned: "#9c27b0",
-      in_transit: "#ffc107",
-      delivered: "#4caf50",
-      cancelled: "#f44336",
-      rejected: "#f44336",
+      pending_confirmation: '#ff9800',
+      confirmed: '#2196f3',
+      assigned: '#9c27b0',
+      in_transit: '#ffc107',
+      delivered: '#4caf50',
+      cancelled: '#f44336',
+      rejected: '#f44336',
     };
-    return colors[status] || "#757575";
+    return colors[status] || '#757575';
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "pending_confirmation":
-        return "⏳";
-      case "confirmed":
-        return "✅";
-      case "assigned":
-        return "📋";
-      case "in_transit":
-        return "🚚";
-      case "delivered":
-        return "🎯";
-      case "cancelled":
-        return "❌";
-      case "rejected":
-        return "⚠️";
+      case 'pending_confirmation':
+        return '⏳';
+      case 'confirmed':
+        return '✅';
+      case 'assigned':
+        return '📋';
+      case 'in_transit':
+        return '🚚';
+      case 'delivered':
+        return '🎯';
+      case 'cancelled':
+        return '❌';
+      case 'rejected':
+        return '⚠️';
       default:
-        return "📦";
+        return '📦';
     }
   };
 
   const getOrderTypeIcon = (type) => {
     switch (type) {
-      case "delivery":
-        return "🚚";
-      case "collection":
-        return "📦";
-      case "both":
-        return "🔄";
-      case "complicated":
-        return "⚠️";
+      case 'delivery':
+        return '🚚';
+      case 'collection':
+        return '📦';
+      case 'both':
+        return '🔄';
+      case 'complicated':
+        return '⚠️';
       default:
-        return "📋";
+        return '📋';
     }
   };
 
   const getPriorityIcon = (priority) => {
     switch (priority) {
-      case "urgent":
-        return "🔴";
-      case "high":
-        return "🟠";
-      case "normal":
-        return "🟢";
+      case 'urgent':
+        return '🔴';
+      case 'high':
+        return '🟠';
+      case 'normal':
+        return '🟢';
       default:
-        return "🟢";
+        return '🟢';
     }
   };
 
   const formatDeliveryPeriod = (order) => {
-    if (!order.deliveryDateStart) return "Not specified";
+    if (!order.deliveryDateStart) return 'Not specified';
 
     const startDate = new Date(order.deliveryDateStart).toLocaleDateString();
 
@@ -381,18 +382,18 @@ const DriverPanel = () => {
   const formatPhoneNumber = (phone) => {
     if (!phone) return null;
     // Remove all non-digit characters
-    const digits = phone.replace(/\D/g, "");
+    const digits = phone.replace(/\D/g, '');
     return digits;
   };
 
   const getNextStatuses = (currentStatus) => {
     switch (currentStatus) {
-      case "assigned":
-        return ["in_transit", "cancelled"];
-      case "in_transit":
-        return ["delivered", "cancelled"];
-      case "confirmed":
-        return ["assigned", "cancelled"];
+      case 'assigned':
+        return ['in_transit', 'cancelled'];
+      case 'in_transit':
+        return ['delivered', 'cancelled'];
+      case 'confirmed':
+        return ['assigned', 'cancelled'];
       default:
         return [];
     }
@@ -404,10 +405,10 @@ const DriverPanel = () => {
   // };
 
   if (loading)
-    return <div className='loading-state'>Загрузка панели управления...</div>;
+    return <div className="loading-state">Загрузка панели управления...</div>;
 
   return (
-    <div className='driver-panel'>
+    <div className="driver-panel">
       {/* Header */}
       {/* <div className="driver-header">
         <div className="header-left">
@@ -434,10 +435,11 @@ const DriverPanel = () => {
       </div> */}
       <Header />
 
-      {success && <div className='success-message'>{success}</div>}
+      {success && <div className="success-message">{success}</div>}
 
       {/* Stats Cards */}
-      <div className='stats-grid'>
+      {activeTab === 'calendar' && <OrderStats />}
+      {/* <div className='stats-grid'>
         <div className='stat-card'>
           <div className='stat-icon'>📦</div>
           <div className='stat-info'>
@@ -466,89 +468,89 @@ const DriverPanel = () => {
             <p className='stat-number'>{stats.pending}</p>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Tabs */}
-      <div className='driver-tabs'>
+      <div className="driver-tabs">
         <button
-          className={`tab-btn ${activeTab === "calendar" ? "active" : ""}`}
-          onClick={() => setActiveTab("calendar")}
+          className={`tab-btn ${activeTab === 'calendar' ? 'active' : ''}`}
+          onClick={() => setActiveTab('calendar')}
         >
-          📅 Timeline Calendar
+          📅 Календарь
         </button>
         <button
-          className={`tab-btn ${activeTab === "orders" ? "active" : ""}`}
-          onClick={() => setActiveTab("orders")}
+          className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
+          onClick={() => setActiveTab('orders')}
         >
-          📋 Orders for {selectedDate.toLocaleDateString()}
+          📋 Заказы на {selectedDate.toLocaleDateString()}
         </button>
       </div>
 
       {/* Timeline Calendar Tab */}
-      {activeTab === "calendar" && (
-        <div className='calendar-tab'>
-          <div className='calendar-container'>
+      {activeTab === 'calendar' && (
+        <div className="calendar-tab">
+          <div className="calendar-container">
             <Calendar
               key={`calendar-${refreshTrigger}`}
               onChange={setSelectedDate}
               value={selectedDate}
               tileContent={tileContent}
               onClickDay={handleDateClick}
-              className='driver-calendar timeline-calendar'
+              className="driver-calendar timeline-calendar"
             />
           </div>
 
-          <div className='calendar-legend'>
-            <h3>Timeline Legend</h3>
-            <div className='legend-items'>
-              <div className='legend-item'>
+          <div className="calendar-legend">
+            <h3>Памятка</h3>
+            <div className="legend-items">
+              {/* <div className="legend-item">
                 <div
-                  className='legend-bar start'
-                  style={{ backgroundColor: "#4caf50" }}
+                  className="legend-bar start"
+                  style={{ backgroundColor: '#4caf50' }}
                 ></div>
                 <span>Start of range (▶)</span>
               </div>
-              <div className='legend-item'>
+              <div className="legend-item">
                 <div
-                  className='legend-bar middle'
-                  style={{ backgroundColor: "#4caf50" }}
+                  className="legend-bar middle"
+                  style={{ backgroundColor: '#4caf50' }}
                 ></div>
                 <span>Middle of range (─)</span>
               </div>
-              <div className='legend-item'>
+              <div className="legend-item">
                 <div
-                  className='legend-bar end'
-                  style={{ backgroundColor: "#4caf50" }}
+                  className="legend-bar end"
+                  style={{ backgroundColor: '#4caf50' }}
                 ></div>
                 <span>End of range (◼)</span>
-              </div>
-              <div className='legend-item'>
+              </div> */}
+              {/* <div className="legend-item">
                 <div
-                  className='legend-dot'
-                  style={{ backgroundColor: "#4caf50" }}
+                  className="legend-dot"
+                  style={{ backgroundColor: '#4caf50' }}
                 ></div>
                 <span>Single day order (●)</span>
-              </div>
-              <div className='legend-item'>
+              </div> */}
+              <div className="legend-item">
                 <div
-                  className='legend-bar urgent'
-                  style={{ backgroundColor: "#f44336" }}
+                  className="legend-bar urgent"
+                  style={{ backgroundColor: '#f44336' }}
                 ></div>
-                <span>🔴 Urgent priority</span>
+                <span>🔴 Жопа в огне</span>
               </div>
-              <div className='legend-item'>
+              <div className="legend-item">
                 <div
-                  className='legend-bar high'
-                  style={{ backgroundColor: "#ff9800" }}
+                  className="legend-bar high"
+                  style={{ backgroundColor: '#ff9800' }}
                 ></div>
-                <span>🟠 High priority</span>
+                <span>🟠 Побыстрей бы</span>
               </div>
-              <div className='legend-item'>
+              <div className="legend-item">
                 <div
-                  className='legend-bar'
-                  style={{ backgroundColor: "#4caf50" }}
+                  className="legend-bar"
+                  style={{ backgroundColor: '#4caf50' }}
                 ></div>
-                <span>🟢 Normal priority</span>
+                <span>🟢 Не срочно</span>
               </div>
             </div>
           </div>
@@ -556,149 +558,149 @@ const DriverPanel = () => {
       )}
 
       {/* Orders List Tab */}
-      {activeTab === "orders" && (
-        <div className='orders-tab'>
-          <div className='selected-date-header'>
+      {activeTab === 'orders' && (
+        <div className="orders-tab">
+          <div className="selected-date-header">
             <h2>
-              Orders for{" "}
-              {selectedDate.toLocaleDateString("en-US", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
+              Заказы на{' '}
+              {selectedDate.toLocaleDateString('ru-RU', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
               })}
             </h2>
             <button
-              className='back-to-calendar'
-              onClick={() => setActiveTab("calendar")}
+              className="back-to-calendar"
+              onClick={() => setActiveTab('calendar')}
             >
-              ← Back to Calendar
+              ← Назад к календарю
             </button>
           </div>
 
-          <div className='orders-list' key={`orders-${refreshTrigger}`}>
+          <div className="orders-list" key={`orders-${refreshTrigger}`}>
             {getOrdersForSelectedDate().length === 0 ? (
-              <div className='no-orders'>
-                <div className='no-orders-icon'>📭</div>
-                <h3>No orders for this day</h3>
-                <p>You don't have any deliveries scheduled on this date</p>
+              <div className="no-orders">
+                <div className="no-orders-icon">📭</div>
+                <h3>В этот день нет заказов</h3>
+                <p>Не грустите</p>
               </div>
             ) : (
               getOrdersForSelectedDate().map((order) => (
-                <div key={order._id} className='order-card'>
-                  <div className='order-header'>
-                    <div className='order-number'>
-                      <span className='order-icon'>📦</span>
+                <div key={order._id} className="order-card">
+                  <div className="order-header">
+                    <div className="order-number">
+                      <span className="order-icon">📦</span>
                       <strong>{order.orderNumber}</strong>
                       <span
-                        className='order-type-badge'
+                        className="order-type-badge"
                         data-type={order.orderType}
                       >
                         {getOrderTypeIcon(order.orderType)} {order.orderType}
                       </span>
                       <span
-                        className='priority-badge'
+                        className="priority-badge"
                         data-priority={order.priority}
                       >
                         {getPriorityIcon(order.priority)} {order.priority}
                       </span>
                     </div>
                     <div
-                      className='order-status'
+                      className="order-status"
                       style={{
-                        background: getStatusColor(order.status) + "20",
+                        background: getStatusColor(order.status) + '20',
                         color: getStatusColor(order.status),
                       }}
                     >
-                      {getStatusIcon(order.status)}{" "}
-                      {order.status?.replace("_", " ").toUpperCase()}
+                      {getStatusIcon(order.status)}{' '}
+                      {order.status?.replace('_', ' ').toUpperCase()}
                     </div>
                   </div>
 
-                  <div className='order-details'>
-                    <div className='detail-row'>
-                      <span className='detail-label'>Client:</span>
-                      <span className='detail-value'>{order.client?.name}</span>
+                  <div className="order-details">
+                    <div className="detail-row">
+                      <span className="detail-label">Клиент:</span>
+                      <span className="detail-value">{order.client?.name}</span>
                     </div>
-                    <div className='detail-row'>
-                      <span className='detail-label'>Client Phone:</span>
-                      <span className='detail-value'>
+                    <div className="detail-row">
+                      <span className="detail-label">Тел:</span>
+                      <span className="detail-value">
                         {order.client?.phone ? (
                           <a
                             href={`tel:${formatPhoneNumber(order.client.phone)}`}
-                            className='phone-link'
+                            className="phone-link"
                           >
                             📞 {order.client.phone}
                           </a>
                         ) : (
-                          "No phone"
+                          'Телефон не указан'
                         )}
                       </span>
                     </div>
-                    <div className='detail-row'>
-                      <span className='detail-label'>Address:</span>
-                      <span className='detail-value'>
+                    <div className="detail-row">
+                      <span className="detail-label">Адрес:</span>
+                      <span className="detail-value">
                         {order.deliveryAddress}
                       </span>
                     </div>
-                    <div className='detail-row'>
-                      <span className='detail-label'>Delivery Period:</span>
-                      <span className='detail-value delivery-period'>
+                    <div className="detail-row">
+                      <span className="detail-label">Период доставки:</span>
+                      <span className="detail-value delivery-period">
                         {formatDeliveryPeriod(order)}
                         {order.deliveryDateEnd &&
                           order.deliveryDateStart !== order.deliveryDateEnd && (
-                            <span className='range-badge'>📅 Multi-day</span>
+                            <span className="range-badge">📅 Многодневный</span>
                           )}
                       </span>
                     </div>
 
                     {/* Order Creator Info - NEW SECTION */}
-                    <div className='creator-section'>
-                      <div className='detail-row creator-info'>
-                        <span className='detail-label'>Order Creator:</span>
-                        <span className='detail-value'>
-                          👤 {order.createdBy?.name || "Unknown"}
+                    <div className="creator-section">
+                      <div className="detail-row creator-info">
+                        <span className="detail-label">Заказ создал:</span>
+                        <span className="detail-value">
+                          👤 {order.createdBy?.name || 'Unknown'}
                         </span>
                       </div>
                       {order.createdBy?.phone && (
-                        <div className='detail-row'>
-                          <span className='detail-label'>Creator Phone:</span>
-                          <span className='detail-value'>
+                        <div className="detail-row">
+                          <span className="detail-label">Тел:</span>
+                          <span className="detail-value">
                             <a
                               href={`tel:${formatPhoneNumber(order.createdBy.phone)}`}
-                              className='phone-link creator-phone'
+                              className="phone-link creator-phone"
                             >
                               📞 {order.createdBy.phone}
                             </a>
                           </span>
                         </div>
                       )}
-                      {order.createdBy?.email && (
-                        <div className='detail-row'>
-                          <span className='detail-label'>Creator Email:</span>
-                          <span className='detail-value'>
+                      {/* {order.createdBy?.email && (
+                        <div className="detail-row">
+                          <span className="detail-label">Email:</span>
+                          <span className="detail-value">
                             <a
                               href={`mailto:${order.createdBy.email}`}
-                              className='email-link'
+                              className="email-link"
                             >
                               ✉️ {order.createdBy.email}
                             </a>
                           </span>
                         </div>
-                      )}
+                      )} */}
                     </div>
 
                     {order.notes && (
-                      <div className='detail-row'>
-                        <span className='detail-label'>Notes:</span>
-                        <span className='detail-value notes'>
+                      <div className="detail-row">
+                        <span className="detail-label">Примечания:</span>
+                        <span className="detail-value notes">
                           {order.notes}
                         </span>
                       </div>
                     )}
                   </div>
 
-                  <div className='order-actions'>
+                  <div className="order-actions">
                     {getNextStatuses(order.status).map((nextStatus) => (
                       <button
                         key={nextStatus}
@@ -708,15 +710,16 @@ const DriverPanel = () => {
                           setShowStatusModal(true);
                         }}
                       >
-                        {nextStatus === "in_transit" && "🚚 Start Delivery"}
-                        {nextStatus === "delivered" && "✅ Mark Delivered"}
-                        {nextStatus === "assigned" && "📋 Accept Order"}
-                        {nextStatus === "cancelled" && "❌ Cancel Order"}
+                        {nextStatus === 'in_transit' && '🚚 Начать доставку'}
+                        {nextStatus === 'delivered' &&
+                          '✅ Отметить доставленным'}
+                        {nextStatus === 'assigned' && '📋 Принять заказ'}
+                        {nextStatus === 'cancelled' && '❌ Отменить заказ'}
                       </button>
                     ))}
-                    {order.status === "delivered" && (
-                      <div className='completed-badge'>
-                        ✅ Completed -{" "}
+                    {order.status === 'delivered' && (
+                      <div className="completed-badge">
+                        ✅ Completed -{' '}
                         {new Date(order.updatedAt).toLocaleString()}
                       </div>
                     )}
@@ -731,83 +734,79 @@ const DriverPanel = () => {
       {/* Status Update Modal */}
       {showStatusModal && selectedOrder && (
         <div
-          className='modal-overlay'
+          className="modal-overlay"
           onClick={() => setShowStatusModal(false)}
         >
-          <div className='modal-content' onClick={(e) => e.stopPropagation()}>
-            <div className='modal-header'>
-              <h3>Update Order Status</h3>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Обновление статуса заказа</h3>
               <button
-                className='close-modal'
+                className="close-modal"
                 onClick={() => setShowStatusModal(false)}
               >
                 ×
               </button>
             </div>
-            <div className='modal-body'>
-              <div className='order-summary'>
-                <p>
+            <div className="modal-body">
+              <div className="order-summary">
+                {/* <p>
                   <strong>Order:</strong> {selectedOrder.orderNumber}
+                </p> */}
+                <p>
+                  <strong>Клиент:</strong> {selectedOrder.client?.name}
                 </p>
                 <p>
-                  <strong>Client:</strong> {selectedOrder.client?.name}
-                </p>
-                <p>
-                  <strong>Client Phone:</strong>
+                  <strong>Тел:</strong>
                   {selectedOrder.client?.phone ? (
                     <a
                       href={`tel:${formatPhoneNumber(selectedOrder.client.phone)}`}
-                      className='phone-link'
+                      className="phone-link"
                     >
                       {selectedOrder.client.phone}
                     </a>
                   ) : (
-                    "No phone"
+                    'Телефон не указан'
                   )}
                 </p>
                 <p>
-                  <strong>Address:</strong> {selectedOrder.deliveryAddress}
+                  <strong>Адрес:</strong> {selectedOrder.deliveryAddress}
                 </p>
                 <p>
-                  <strong>Delivery Period:</strong>{" "}
+                  <strong>Период доставки:</strong>{' '}
                   {formatDeliveryPeriod(selectedOrder)}
                 </p>
                 <p>
-                  <strong>Created by:</strong>{" "}
-                  {selectedOrder.createdBy?.name || "Unknown"}
+                  <strong>Заказ создал:</strong>{' '}
+                  {selectedOrder.createdBy?.name || 'Неизвестно'}
                 </p>
                 {selectedOrder.createdBy?.phone && (
                   <p>
-                    <strong>Creator Phone:</strong>
+                    <strong>Тел:</strong>
                     <a
                       href={`tel:${formatPhoneNumber(selectedOrder.createdBy.phone)}`}
-                      className='phone-link'
+                      className="phone-link"
                     >
                       {selectedOrder.createdBy.phone}
                     </a>
                   </p>
                 )}
               </div>
-              <div className='status-options'>
-                <h4>Change status to:</h4>
+              <div className="status-options">
+                <h4>Изменить статус на:</h4>
                 {getNextStatuses(selectedOrder.status).map((nextStatus) => (
                   <button
                     key={nextStatus}
                     className={`status-option-btn ${nextStatus}`}
                     onClick={() => {
-                      if (nextStatus === "delivered") {
+                      if (nextStatus === 'delivered') {
                         if (
-                          window.confirm(
-                            "Confirm that the delivery has been completed?",
-                          )
+                          window.confirm('Подтвердить, что заказ доставлен?')
                         ) {
                           updateOrderStatus(selectedOrder._id, nextStatus);
                         }
-                      } else if (nextStatus === "cancelled") {
+                      } else if (nextStatus === 'cancelled') {
                         if (
-                          window.confirm(
-                            "Are you sure you want to cancel this order?",
-                          )
+                          window.confirm('Уверены, что хотите отменить заказ?')
                         ) {
                           updateOrderStatus(selectedOrder._id, nextStatus);
                         }
@@ -816,10 +815,10 @@ const DriverPanel = () => {
                       }
                     }}
                   >
-                    {nextStatus === "in_transit" && "🚚 Start Delivery"}
-                    {nextStatus === "delivered" && "✅ Mark as Delivered"}
-                    {nextStatus === "assigned" && "📋 Accept Order"}
-                    {nextStatus === "cancelled" && "❌ Cancel Order"}
+                    {nextStatus === 'in_transit' && '🚚 Начать доставку'}
+                    {nextStatus === 'delivered' && '✅ Отметить доставленным'}
+                    {nextStatus === 'assigned' && '📋 Принять заказ'}
+                    {nextStatus === 'cancelled' && '❌ Отменить заказ'}
                   </button>
                 ))}
               </div>

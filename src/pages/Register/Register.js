@@ -11,7 +11,7 @@ const Register = () => {
     confirmPassword: '',
     role: 'manager',
     vehicleInfo: '',
-    assignedZone: ''
+    assignedZone: '',
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -20,12 +20,12 @@ const Register = () => {
 
   const handleChange = (e) => {
     let value = e.target.value;
-    
+
     // Auto-format phone number for +7 format
     if (e.target.name === 'phone') {
       // Remove all non-digits
       const digits = value.replace(/\D/g, '');
-      
+
       if (digits.length === 0) {
         value = '';
       } else if (digits.length <= 1) {
@@ -36,16 +36,32 @@ const Register = () => {
         value = '+' + digits.slice(0, 1) + ' ' + digits.slice(1, 4);
         if (digits.length > 4) value += ' ' + digits.slice(4);
       } else if (digits.length <= 9) {
-        value = '+' + digits.slice(0, 1) + ' ' + digits.slice(1, 4) + ' ' + digits.slice(4, 7);
+        value =
+          '+' +
+          digits.slice(0, 1) +
+          ' ' +
+          digits.slice(1, 4) +
+          ' ' +
+          digits.slice(4, 7);
         if (digits.length > 7) value += '-' + digits.slice(7);
       } else {
-        value = '+' + digits.slice(0, 1) + ' ' + digits.slice(1, 4) + ' ' + digits.slice(4, 7) + '-' + digits.slice(7, 9) + '-' + digits.slice(9, 11);
+        value =
+          '+' +
+          digits.slice(0, 1) +
+          ' ' +
+          digits.slice(1, 4) +
+          ' ' +
+          digits.slice(4, 7) +
+          '-' +
+          digits.slice(7, 9) +
+          '-' +
+          digits.slice(9, 11);
       }
     }
-    
+
     setFormData({
       ...formData,
-      [e.target.name]: value
+      [e.target.name]: value,
     });
     setError('');
   };
@@ -53,7 +69,7 @@ const Register = () => {
   const validatePhone = (phone) => {
     // Remove all non-digit characters
     const digits = phone.replace(/\D/g, '');
-    
+
     // Check for Russian number format (11 digits starting with 7)
     if (digits.length === 11 && digits[0] === '7') {
       return true;
@@ -80,43 +96,45 @@ const Register = () => {
 
     // Validation
     if (!formData.name.trim()) {
-      setError('Name is required');
+      setError('Имя обязательно для заполнения');
       setLoading(false);
       return;
     }
 
     if (!formData.email.trim()) {
-      setError('Email is required');
+      setError('Email обязательно для заполнения');
       setLoading(false);
       return;
     }
 
     if (!formData.phone.trim()) {
-      setError('Phone number is required');
+      setError('Номер телефона обязательно для заполнения');
       setLoading(false);
       return;
     }
 
     if (!validatePhone(formData.phone)) {
-      setError('Please enter a valid phone number (e.g., +7 912 345-67-89 or +79123456789)');
+      setError(
+        'Введите корректный номер телефона (например, +7 912 345-67-89 или +79123456789)',
+      );
       setLoading(false);
       return;
     }
 
     if (!formData.password) {
-      setError('Password is required');
+      setError('Пароль обязательно для заполнения');
       setLoading(false);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError('Пароли не совпадают');
       setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError('Пароль должен быть минимум 6 символов');
       setLoading(false);
       return;
     }
@@ -127,7 +145,7 @@ const Register = () => {
       email: formData.email.trim().toLowerCase(),
       phone: formatPhoneForStorage(formData.phone),
       password: formData.password,
-      role: formData.role
+      role: formData.role,
     };
 
     // Add driver fields if role is driver
@@ -136,14 +154,22 @@ const Register = () => {
       payload.assignedZone = formData.assignedZone || '';
     }
 
-    console.log('Sending registration data:', { ...payload, password: '[HIDDEN]' });
+    console.log('Отправка регистрационных данных:', {
+      ...payload,
+      password: '[HIDDEN]',
+    });
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', payload);
+      const response = await axios.post(
+        'http://localhost:5000/api/auth/register',
+        payload,
+      );
       console.log('Registration response:', response.data);
-      
-      setSuccess(`Account created successfully as ${formData.role}! Redirecting to login...`);
-      
+
+      setSuccess(
+        `Аккаунт ${formData.role} успешно создан! Перенаправление на страницу входа...`,
+      );
+
       // Clear form
       setFormData({
         name: '',
@@ -153,19 +179,20 @@ const Register = () => {
         confirmPassword: '',
         role: 'manager',
         vehicleInfo: '',
-        assignedZone: ''
+        assignedZone: '',
       });
-      
+
       // Redirect to login after 2 seconds
       setTimeout(() => {
         navigate('/login');
       }, 2000);
-      
     } catch (err) {
       console.error('Registration error details:', err);
       console.error('Error response:', err.response);
-      
-      const errorMessage = err.response?.data?.error || 'Registration failed. Please try again.';
+
+      const errorMessage =
+        err.response?.data?.error ||
+        'Регистрация не удалась. Попробуйте снова.';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -175,22 +202,21 @@ const Register = () => {
   return (
     <div className="register-container">
       <div className="register-card">
-        <h2>Create Account</h2>
-        <p className="subtitle">Register for an account</p>
-        
+        <h2>Создать аккаунт</h2>
+
         {error && <div className="error-message">{error}</div>}
         {success && <div className="success-message">{success}</div>}
-        
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Full Name *</label>
+            <label>Имя и фамилия *</label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
               required
-              placeholder="Enter your full name"
+              placeholder="Имя и фамилия"
             />
           </div>
 
@@ -202,12 +228,12 @@ const Register = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              placeholder="Enter your email"
+              placeholder="Введите email"
             />
           </div>
 
           <div className="form-group">
-            <label>Mobile Phone *</label>
+            <label>Мобильный телефон *</label>
             <input
               type="tel"
               name="phone"
@@ -216,39 +242,46 @@ const Register = () => {
               required
               placeholder="+7 912 345-67-89"
             />
-            <small className="field-hint">Format: +7 XXX XXX-XX-XX or +79123456789</small>
+            <small className="field-hint">
+              Формат: +7 XXX XXX-XX-XX или +79123456789
+            </small>
           </div>
 
           <div className="form-group">
-            <label>Password *</label>
+            <label>Пароль *</label>
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
               required
-              placeholder="Minimum 6 characters"
+              placeholder="Минимум 6 символов"
             />
           </div>
 
           <div className="form-group">
-            <label>Confirm Password *</label>
+            <label>Подтвердить пароль *</label>
             <input
               type="password"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
               required
-              placeholder="Re-enter password"
+              placeholder="Подтвердить пароль"
             />
           </div>
 
           <div className="form-group">
-            <label>Register as *</label>
-            <select name="role" value={formData.role} onChange={handleChange} required>
-              <option value="admin">Admin (Full Access)</option>
-              <option value="manager">Manager</option>
-              <option value="driver">Driver</option>
+            <label>Ваша роль *</label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              required
+            >
+              <option value="admin">Администратор</option>
+              <option value="manager">Менеджер</option>
+              <option value="driver">Водитель</option>
             </select>
           </div>
 
@@ -256,45 +289,35 @@ const Register = () => {
           {formData.role === 'driver' && (
             <div className="driver-fields">
               <div className="form-group">
-                <label>Vehicle Info</label>
+                <label>Информация о ТС</label>
                 <input
                   type="text"
                   name="vehicleInfo"
                   value={formData.vehicleInfo}
                   onChange={handleChange}
-                  placeholder="e.g., Truck - Plate ABC123"
+                  placeholder="Номер машины"
                 />
               </div>
               <div className="form-group">
-                <label>Assigned Zone</label>
+                <label>Присвоенная зона</label>
                 <input
                   type="text"
                   name="assignedZone"
                   value={formData.assignedZone}
                   onChange={handleChange}
-                  placeholder="e.g., Zone A, North Region"
+                  placeholder="город или ТК"
                 />
               </div>
             </div>
           )}
 
           <button type="submit" disabled={loading} className="register-btn">
-            {loading ? 'Creating Account...' : 'Register'}
+            {loading ? 'Регистрация...' : 'Зарегистрироваться'}
           </button>
         </form>
 
         <div className="login-link">
-          Already have an account? <a href="/login">Login here</a>
-        </div>
-
-        <div className="info-box">
-          <h4>Account Types:</h4>
-          <ul>
-            <li><strong>Admin:</strong> Full system access (manage users, confirm orders, all privileges)</li>
-            <li><strong>Manager:</strong> Create orders, edit orders, manage clients</li>
-            <li><strong>Driver:</strong> View assigned orders, update delivery status</li>
-          </ul>
-          <p className="note">Note: Your phone number will be visible to drivers for contact purposes.</p>
+          Уже есть аккаунт? <a href="/login">Вход</a>
         </div>
       </div>
     </div>

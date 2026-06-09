@@ -18,7 +18,7 @@ const Login = () => {
     try {
       const user = await login(email, password);
       console.log('Logged in user:', user);
-      
+
       // Redirect based on role
       if (user.role === 'admin') {
         navigate('/admin');
@@ -40,7 +40,7 @@ const Login = () => {
   return (
     <div className="login-container">
       <form onSubmit={handleSubmit}>
-        <h2>Login to Dashboard</h2>
+        <h2>Вход</h2>
         {error && <div className="error">{error}</div>}
         <input
           type="email"
@@ -51,24 +51,17 @@ const Login = () => {
         />
         <input
           type="password"
-          placeholder="Password"
+          placeholder="Пароль"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
         <button type="submit" disabled={loading}>
-          {loading ? 'Logging in...' : 'Login'}
+          {loading ? 'Выполняется вход...' : 'Войти'}
         </button>
-        
+
         <div className="register-link">
-          Don't have an account? <Link to="/register">Register here</Link>
-        </div>
-        
-        <div className="demo-creds">
-          <p>Demo Accounts:</p>
-          <p><strong>Admin:</strong> admin@example.com / admin123</p>
-          <p><strong>Manager:</strong> manager@example.com / 123456</p>
-          <p><strong>Driver:</strong> driver@example.com / 123456</p>
+          Нет аккаунта? <Link to="/register">Регистрация</Link>
         </div>
       </form>
     </div>

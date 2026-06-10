@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { apiSettings } from '../utils/apiSettings';
+import React, { useState } from "react";
+import axios from "axios";
+import { apiSettings } from "../utils/apiSettings";
 
 const ConfirmOrders = ({ orders, onConfirm }) => {
   const [selectedOrders, setSelectedOrders] = useState([]);
@@ -8,11 +8,11 @@ const ConfirmOrders = ({ orders, onConfirm }) => {
   const handleConfirm = async (orderId) => {
     try {
       await axios.post(
-        `${apiSettings.localServer}/api/orders/${orderId}/confirm`,
+        `${apiSettings.serverName}/api/orders/${orderId}/confirm`,
       );
       onConfirm();
     } catch (error) {
-      console.error('Error confirming order:', error);
+      console.error("Error confirming order:", error);
     }
   };
 
@@ -20,19 +20,19 @@ const ConfirmOrders = ({ orders, onConfirm }) => {
     try {
       await Promise.all(
         selectedOrders.map((id) =>
-          axios.post(`${apiSettings.localServer}/api/orders/${id}/confirm`),
+          axios.post(`${apiSettings.serverName}/api/orders/${id}/confirm`),
         ),
       );
       setSelectedOrders([]);
       onConfirm();
     } catch (error) {
-      console.error('Error bulk confirming:', error);
+      console.error("Error bulk confirming:", error);
     }
   };
 
   return (
     <div>
-      <div className="bulk-actions">
+      <div className='bulk-actions'>
         <button
           onClick={handleBulkConfirm}
           disabled={selectedOrders.length === 0}
@@ -41,12 +41,12 @@ const ConfirmOrders = ({ orders, onConfirm }) => {
         </button>
       </div>
 
-      <table className="orders-table">
+      <table className='orders-table'>
         <thead>
           <tr>
             <th>
               <input
-                type="checkbox"
+                type='checkbox'
                 onChange={(e) => {
                   if (e.target.checked)
                     setSelectedOrders(orders.map((o) => o._id));
@@ -66,7 +66,7 @@ const ConfirmOrders = ({ orders, onConfirm }) => {
             <tr key={order._id}>
               <td>
                 <input
-                  type="checkbox"
+                  type='checkbox'
                   checked={selectedOrders.includes(order._id)}
                   onChange={(e) => {
                     if (e.target.checked)

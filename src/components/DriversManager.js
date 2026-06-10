@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
-import { apiSettings } from '../utils/apiSettings';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useAuth } from "../contexts/AuthContext";
+import { apiSettings } from "../utils/apiSettings";
 
 const DriversManager = () => {
   const { user } = useAuth();
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editingDriver, setEditingDriver] = useState(null);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
-    vehicleInfo: '',
-    assignedZone: '',
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phone: "",
+    vehicleInfo: "",
+    assignedZone: "",
     isActive: true,
   });
 
@@ -31,13 +31,13 @@ const DriversManager = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${apiSettings.localServer}/api/users/drivers`,
+        `${apiSettings.serverName}/api/users/drivers`,
       );
       setDrivers(response.data);
-      setError('');
+      setError("");
     } catch (error) {
-      console.error('Error fetching drivers:', error);
-      setError(error.response?.data?.error || 'Failed to fetch drivers');
+      console.error("Error fetching drivers:", error);
+      setError(error.response?.data?.error || "Failed to fetch drivers");
     } finally {
       setLoading(false);
     }
@@ -55,12 +55,12 @@ const DriversManager = () => {
 
     // Validation
     if (!editingDriver && formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
 
     if (!editingDriver && formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError("Password must be at least 6 characters");
       return;
     }
 
@@ -76,10 +76,10 @@ const DriversManager = () => {
         };
 
         await axios.put(
-          `${apiSettings.localServer}/api/users/drivers/${editingDriver._id}`,
+          `${apiSettings.serverName}/api/users/drivers/${editingDriver._id}`,
           updateData,
         );
-        setSuccess('Данные водителя успешно обновлены!');
+        setSuccess("Данные водителя успешно обновлены!");
       } else {
         // Create new driver
         const driverData = {
@@ -92,10 +92,10 @@ const DriversManager = () => {
         };
 
         await axios.post(
-          `${apiSettings.localServer}/api/users/drivers`,
+          `${apiSettings.serverName}/api/users/drivers`,
           driverData,
         );
-        setSuccess('Пользователь с привилегиями водителя успешно создан');
+        setSuccess("Пользователь с привилегиями водителя успешно создан");
       }
 
       // Reset form and refresh list
@@ -103,11 +103,11 @@ const DriversManager = () => {
       fetchDrivers();
 
       // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(""), 3000);
     } catch (error) {
-      console.error('Error saving driver:', error);
-      setError(error.response?.data?.error || 'Не удалось сохранить');
-      setTimeout(() => setError(''), 3000);
+      console.error("Error saving driver:", error);
+      setError(error.response?.data?.error || "Не удалось сохранить");
+      setTimeout(() => setError(""), 3000);
     }
   };
 
@@ -116,31 +116,31 @@ const DriversManager = () => {
     setFormData({
       name: driver.name,
       email: driver.email,
-      password: '',
-      confirmPassword: '',
-      phone: driver.phone || '',
-      vehicleInfo: driver.vehicleInfo || '',
-      assignedZone: driver.assignedZone || '',
+      password: "",
+      confirmPassword: "",
+      phone: driver.phone || "",
+      vehicleInfo: driver.vehicleInfo || "",
+      assignedZone: driver.assignedZone || "",
       isActive: driver.isActive,
     });
     setShowModal(true);
   };
 
   const handleDelete = async (driverId) => {
-    if (window.confirm('Are you sure you want to deactivate this driver?')) {
+    if (window.confirm("Are you sure you want to deactivate this driver?")) {
       try {
         await axios.delete(
-          `${apiSettings.localServer}/api/users/drivers/${driverId}`,
+          `${apiSettings.serverName}/api/users/drivers/${driverId}`,
         );
-        setSuccess('Успешная деактивация пользователя');
+        setSuccess("Успешная деактивация пользователя");
         fetchDrivers();
-        setTimeout(() => setSuccess(''), 3000);
+        setTimeout(() => setSuccess(""), 3000);
       } catch (error) {
-        console.error('Error deactivating driver:', error);
+        console.error("Error deactivating driver:", error);
         setError(
-          error.response?.data?.error || 'Неудачная деактивация пользователя',
+          error.response?.data?.error || "Неудачная деактивация пользователя",
         );
-        setTimeout(() => setError(''), 3000);
+        setTimeout(() => setError(""), 3000);
       }
     }
   };
@@ -148,78 +148,78 @@ const DriversManager = () => {
   const handleActivate = async (driverId) => {
     try {
       await axios.put(
-        `${apiSettings.localServer}/api/users/drivers/${driverId}`,
+        `${apiSettings.serverName}/api/users/drivers/${driverId}`,
         {
           isActive: true,
         },
       );
-      setSuccess('Успешная деактивация пользователя');
+      setSuccess("Успешная деактивация пользователя");
       fetchDrivers();
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(""), 3000);
     } catch (error) {
-      console.error('Неудачная деактивация пользователя:', error);
+      console.error("Неудачная деактивация пользователя:", error);
       setError(
-        error.response?.data?.error || 'Неудачная деактивация пользователя',
+        error.response?.data?.error || "Неудачная деактивация пользователя",
       );
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(""), 3000);
     }
   };
 
   const resetForm = () => {
     setEditingDriver(null);
     setFormData({
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      phone: '',
-      vehicleInfo: '',
-      assignedZone: '',
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      phone: "",
+      vehicleInfo: "",
+      assignedZone: "",
       isActive: true,
     });
     setShowModal(false);
-    setError('');
+    setError("");
   };
 
   const getStatusBadge = (isActive) => {
     return isActive ? (
-      <span className="status-badge active">Действующий</span>
+      <span className='status-badge active'>Действующий</span>
     ) : (
-      <span className="status-badge inactive">Недействующий</span>
+      <span className='status-badge inactive'>Недействующий</span>
     );
   };
 
-  if (loading) return <div className="loading">Загрузка водителей...</div>;
+  if (loading) return <div className='loading'>Загрузка водителей...</div>;
 
   return (
-    <div className="drivers-manager">
-      <div className="section-header">
+    <div className='drivers-manager'>
+      <div className='section-header'>
         <h2>Управление водителями</h2>
         {/* <button onClick={() => setShowModal(true)} className="btn-primary">
           + Добавить водителя
         </button> */}
       </div>
 
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
+      {error && <div className='error-message'>{error}</div>}
+      {success && <div className='success-message'>{success}</div>}
 
-      <div className="drivers-stats">
-        <div className="stat-card">
+      <div className='drivers-stats'>
+        <div className='stat-card'>
           <h3>Всего водителей</h3>
           <p>{drivers.length}</p>
         </div>
-        <div className="stat-card">
+        <div className='stat-card'>
           <h3>Действующие</h3>
           <p>{drivers.filter((d) => d.isActive).length}</p>
         </div>
-        <div className="stat-card">
+        <div className='stat-card'>
           <h3>Недействующие</h3>
           <p>{drivers.filter((d) => !d.isActive).length}</p>
         </div>
       </div>
 
-      <div className="drivers-table-container">
-        <table className="drivers-table">
+      <div className='drivers-table-container'>
+        <table className='drivers-table'>
           <thead>
             <tr>
               <th>Имя</th>
@@ -235,7 +235,7 @@ const DriversManager = () => {
           <tbody>
             {drivers.length === 0 ? (
               <tr>
-                <td colSpan="8" className="no-data">
+                <td colSpan='8' className='no-data'>
                   Не найдено водителей
                 </td>
               </tr>
@@ -246,40 +246,40 @@ const DriversManager = () => {
                     <strong>{driver.name}</strong>
                   </td>
                   <td>{driver.email}</td>
-                  <td>{driver.phone || '-'}</td>
+                  <td>{driver.phone || "-"}</td>
                   <td>
-                    <span className="vehicle-badge">
-                      🚚 {driver.vehicleInfo || 'Not assigned'}
+                    <span className='vehicle-badge'>
+                      🚚 {driver.vehicleInfo || "Not assigned"}
                     </span>
                   </td>
                   <td>
-                    <span className="zone-badge">
-                      📍 {driver.assignedZone || 'Not assigned'}
+                    <span className='zone-badge'>
+                      📍 {driver.assignedZone || "Not assigned"}
                     </span>
                   </td>
                   <td>{getStatusBadge(driver.isActive)}</td>
                   <td>{new Date(driver.createdAt).toLocaleDateString()}</td>
-                  <td className="actions">
+                  <td className='actions'>
                     <button
                       onClick={() => handleEdit(driver)}
-                      className="btn-edit"
-                      title="Edit driver"
+                      className='btn-edit'
+                      title='Edit driver'
                     >
                       ✏️ Редактировать
                     </button>
                     {driver.isActive ? (
                       <button
                         onClick={() => handleDelete(driver._id)}
-                        className="btn-delete"
-                        title="Deactivate driver"
+                        className='btn-delete'
+                        title='Deactivate driver'
                       >
                         🔴 Деактивировать
                       </button>
                     ) : (
                       <button
                         onClick={() => handleActivate(driver._id)}
-                        className="btn-activate"
-                        title="Activate driver"
+                        className='btn-activate'
+                        title='Activate driver'
                       >
                         🟢 Активировать
                       </button>
@@ -300,7 +300,7 @@ const DriversManager = () => {
               <h2>{editingDriver ? 'Edit Driver' : 'Add New Driver'}</h2>
               <button className="close-btn" onClick={resetForm}>×</button>
             </div>
-            
+
             <form onSubmit={handleSubmit}>
               <div className="form-row">
                 <div className="form-group">
@@ -314,7 +314,7 @@ const DriversManager = () => {
                     placeholder="Enter driver's full name"
                   />
                 </div>
-                
+
                 {!editingDriver && (
                   <div className="form-group">
                     <label>Email *</label>
@@ -343,7 +343,7 @@ const DriversManager = () => {
                       placeholder="Minimum 6 characters"
                     />
                   </div>
-                  
+
                   <div className="form-group">
                     <label>Confirm Password *</label>
                     <input
@@ -382,7 +382,7 @@ const DriversManager = () => {
                     placeholder="e.g., Truck - ABC123, Van - XYZ789"
                   />
                 </div>
-                
+
                 <div className="form-group">
                   <label>Assigned Zone</label>
                   <input

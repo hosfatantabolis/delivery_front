@@ -23,7 +23,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "deploy": "react-scripts build && scp -r ./build/* hosfat@194.87.103.142:/home/hosfat/delivery"
+    "deploy": "react-scripts build && scp -r ./build/* hosfat@194.87.103.142:delivery"
   },
   "eslintConfig": {
     "extends": [

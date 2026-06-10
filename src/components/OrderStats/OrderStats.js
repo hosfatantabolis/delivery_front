@@ -1,7 +1,7 @@
-import { useAuth } from '../../contexts/AuthContext';
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
-import { apiSettings } from '../../utils/apiSettings';
+import { useAuth } from "../../contexts/AuthContext";
+import React, { useState, useEffect, useCallback } from "react";
+import axios from "axios";
+import { apiSettings } from "../../utils/apiSettings";
 
 const OrderStats = ({ orders: externalOrders = null }) => {
   const { user, socket } = useAuth();
@@ -50,11 +50,11 @@ const OrderStats = ({ orders: externalOrders = null }) => {
       });
 
       const completedOrders = driverOrders.filter(
-        (order) => order.status === 'delivered',
+        (order) => order.status === "delivered",
       );
 
       const pendingOrders = driverOrders.filter(
-        (order) => order.status !== 'delivered' && order.status !== 'cancelled',
+        (order) => order.status !== "delivered" && order.status !== "cancelled",
       );
 
       setStats({
@@ -70,11 +70,11 @@ const OrderStats = ({ orders: externalOrders = null }) => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${apiSettings.localServer}/api/orders`);
+      const res = await axios.get(`${apiSettings.serverName}/api/orders`);
       let driverOrders = res.data;
 
       // Filter for driver if user is driver
-      if (user.role === 'driver') {
+      if (user.role === "driver") {
         driverOrders = res.data.filter(
           (order) =>
             order.assignedDriver?._id === user?.id ||
@@ -85,7 +85,7 @@ const OrderStats = ({ orders: externalOrders = null }) => {
       setOrders(driverOrders);
       calculateStats(driverOrders);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error("Error fetching orders:", error);
     } finally {
       setLoading(false);
     }
@@ -96,7 +96,7 @@ const OrderStats = ({ orders: externalOrders = null }) => {
     if (externalOrders !== null) {
       // External orders provided as prop
       let driverOrders = externalOrders;
-      if (user.role === 'driver') {
+      if (user.role === "driver") {
         driverOrders = externalOrders.filter(
           (order) =>
             order.assignedDriver?._id === user?.id ||
@@ -120,78 +120,78 @@ const OrderStats = ({ orders: externalOrders = null }) => {
       fetchOrders();
     };
 
-    socket.on('order-updated', handleOrderUpdate);
-    socket.on('order-assigned', handleOrderUpdate);
-    socket.on('order-created', handleOrderUpdate);
+    socket.on("order-updated", handleOrderUpdate);
+    socket.on("order-assigned", handleOrderUpdate);
+    socket.on("order-created", handleOrderUpdate);
 
     return () => {
-      socket.off('order-updated', handleOrderUpdate);
-      socket.off('order-assigned', handleOrderUpdate);
-      socket.off('order-created', handleOrderUpdate);
+      socket.off("order-updated", handleOrderUpdate);
+      socket.off("order-assigned", handleOrderUpdate);
+      socket.off("order-created", handleOrderUpdate);
     };
   }, [socket, externalOrders]);
 
   if (loading) {
-    return <div className="stats-loading">Loading stats...</div>;
+    return <div className='stats-loading'>Loading stats...</div>;
   }
 
   return (
     <>
-      {user?.role === 'admin' && (
-        <div className="orders-stats">
-          <div className="stat-card">
+      {user?.role === "admin" && (
+        <div className='orders-stats'>
+          <div className='stat-card'>
             <h3>Всего заказов</h3>
-            <p className="stat-number">{orders.length}</p>
+            <p className='stat-number'>{orders.length}</p>
           </div>
-          <div className="stat-card">
+          <div className='stat-card'>
             <h3>Ожидание</h3>
-            <p className="stat-number">
-              {orders.filter((o) => o.status === 'pending_confirmation').length}
+            <p className='stat-number'>
+              {orders.filter((o) => o.status === "pending_confirmation").length}
             </p>
           </div>
-          <div className="stat-card">
+          <div className='stat-card'>
             <h3>В пути</h3>
-            <p className="stat-number">
-              {orders.filter((o) => o.status === 'in_transit').length}
+            <p className='stat-number'>
+              {orders.filter((o) => o.status === "in_transit").length}
             </p>
           </div>
-          <div className="stat-card">
+          <div className='stat-card'>
             <h3>Доставлены</h3>
-            <p className="stat-number">
-              {orders.filter((o) => o.status === 'delivered').length}
+            <p className='stat-number'>
+              {orders.filter((o) => o.status === "delivered").length}
             </p>
           </div>
         </div>
       )}
 
-      {user?.role === 'driver' && (
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon">📦</div>
-            <div className="stat-info">
+      {user?.role === "driver" && (
+        <div className='stats-grid'>
+          <div className='stat-card'>
+            <div className='stat-icon'>📦</div>
+            <div className='stat-info'>
               <h3>Заказов сегодня</h3>
-              <p className="stat-number">{stats.today}</p>
+              <p className='stat-number'>{stats.today}</p>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-icon">📅</div>
-            <div className="stat-info">
+          <div className='stat-card'>
+            <div className='stat-icon'>📅</div>
+            <div className='stat-info'>
               <h3>Неделя</h3>
-              <p className="stat-number">{stats.week}</p>
+              <p className='stat-number'>{stats.week}</p>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-icon">✅</div>
-            <div className="stat-info">
+          <div className='stat-card'>
+            <div className='stat-icon'>✅</div>
+            <div className='stat-info'>
               <h3>Завершены</h3>
-              <p className="stat-number">{stats.completed}</p>
+              <p className='stat-number'>{stats.completed}</p>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-icon">⏳</div>
-            <div className="stat-info">
+          <div className='stat-card'>
+            <div className='stat-icon'>⏳</div>
+            <div className='stat-info'>
               <h3>Ожидание</h3>
-              <p className="stat-number">{stats.pending}</p>
+              <p className='stat-number'>{stats.pending}</p>
             </div>
           </div>
         </div>

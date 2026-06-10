@@ -1,6 +1,7 @@
 import { useAuth } from '../../contexts/AuthContext';
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { apiSettings } from '../../utils/apiSettings';
 
 const OrderStats = ({ orders: externalOrders = null }) => {
   const { user, socket } = useAuth();
@@ -69,7 +70,7 @@ const OrderStats = ({ orders: externalOrders = null }) => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:5000/api/orders');
+      const res = await axios.get(`${apiSettings.localServer}/api/orders`);
       let driverOrders = res.data;
 
       // Filter for driver if user is driver

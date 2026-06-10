@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { apiSettings } from '../utils/apiSettings';
 
 const DriversManager = () => {
   const { user } = useAuth();
@@ -18,7 +19,7 @@ const DriversManager = () => {
     phone: '',
     vehicleInfo: '',
     assignedZone: '',
-    isActive: true
+    isActive: true,
   });
 
   // Fetch all drivers on component mount
@@ -29,7 +30,9 @@ const DriversManager = () => {
   const fetchDrivers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/users/drivers');
+      const response = await axios.get(
+        `${apiSettings.localServer}/api/users/drivers`,
+      );
       setDrivers(response.data);
       setError('');
     } catch (error) {
@@ -43,19 +46,19 @@ const DriversManager = () => {
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validation
     if (!editingDriver && formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-    
+
     if (!editingDriver && formData.password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
@@ -69,10 +72,13 @@ const DriversManager = () => {
           phone: formData.phone,
           vehicleInfo: formData.vehicleInfo,
           assignedZone: formData.assignedZone,
-          isActive: formData.isActive
+          isActive: formData.isActive,
         };
-        
-        await axios.put(`http://localhost:5000/api/users/drivers/${editingDriver._id}`, updateData);
+
+        await axios.put(
+          `${apiSettings.localServer}/api/users/drivers/${editingDriver._id}`,
+          updateData,
+        );
         setSuccess('Данные водителя успешно обновлены!');
       } else {
         // Create new driver
@@ -82,17 +88,20 @@ const DriversManager = () => {
           password: formData.password,
           phone: formData.phone,
           vehicleInfo: formData.vehicleInfo,
-          assignedZone: formData.assignedZone
+          assignedZone: formData.assignedZone,
         };
-        
-        await axios.post('http://localhost:5000/api/users/drivers', driverData);
+
+        await axios.post(
+          `${apiSettings.localServer}/api/users/drivers`,
+          driverData,
+        );
         setSuccess('Пользователь с привилегиями водителя успешно создан');
       }
-      
+
       // Reset form and refresh list
       resetForm();
       fetchDrivers();
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
@@ -112,7 +121,7 @@ const DriversManager = () => {
       phone: driver.phone || '',
       vehicleInfo: driver.vehicleInfo || '',
       assignedZone: driver.assignedZone || '',
-      isActive: driver.isActive
+      isActive: driver.isActive,
     });
     setShowModal(true);
   };
@@ -120,13 +129,17 @@ const DriversManager = () => {
   const handleDelete = async (driverId) => {
     if (window.confirm('Are you sure you want to deactivate this driver?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/users/drivers/${driverId}`);
+        await axios.delete(
+          `${apiSettings.localServer}/api/users/drivers/${driverId}`,
+        );
         setSuccess('Успешная деактивация пользователя');
         fetchDrivers();
         setTimeout(() => setSuccess(''), 3000);
       } catch (error) {
         console.error('Error deactivating driver:', error);
-        setError(error.response?.data?.error || 'Неудачная деактивация пользователя');
+        setError(
+          error.response?.data?.error || 'Неудачная деактивация пользователя',
+        );
         setTimeout(() => setError(''), 3000);
       }
     }
@@ -134,13 +147,20 @@ const DriversManager = () => {
 
   const handleActivate = async (driverId) => {
     try {
-      await axios.put(`http://localhost:5000/api/users/drivers/${driverId}`, { isActive: true });
+      await axios.put(
+        `${apiSettings.localServer}/api/users/drivers/${driverId}`,
+        {
+          isActive: true,
+        },
+      );
       setSuccess('Успешная деактивация пользователя');
       fetchDrivers();
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Неудачная деактивация пользователя:', error);
-      setError(error.response?.data?.error || 'Неудачная деактивация пользователя');
+      setError(
+        error.response?.data?.error || 'Неудачная деактивация пользователя',
+      );
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -155,16 +175,18 @@ const DriversManager = () => {
       phone: '',
       vehicleInfo: '',
       assignedZone: '',
-      isActive: true
+      isActive: true,
     });
     setShowModal(false);
     setError('');
   };
 
   const getStatusBadge = (isActive) => {
-    return isActive 
-      ? <span className="status-badge active">Действующий</span>
-      : <span className="status-badge inactive">Недействующий</span>;
+    return isActive ? (
+      <span className="status-badge active">Действующий</span>
+    ) : (
+      <span className="status-badge inactive">Недействующий</span>
+    );
   };
 
   if (loading) return <div className="loading">Загрузка водителей...</div>;
@@ -188,11 +210,11 @@ const DriversManager = () => {
         </div>
         <div className="stat-card">
           <h3>Действующие</h3>
-          <p>{drivers.filter(d => d.isActive).length}</p>
+          <p>{drivers.filter((d) => d.isActive).length}</p>
         </div>
         <div className="stat-card">
           <h3>Недействующие</h3>
-          <p>{drivers.filter(d => !d.isActive).length}</p>
+          <p>{drivers.filter((d) => !d.isActive).length}</p>
         </div>
       </div>
 
@@ -213,10 +235,12 @@ const DriversManager = () => {
           <tbody>
             {drivers.length === 0 ? (
               <tr>
-                <td colSpan="8" className="no-data">Не найдено водителей</td>
+                <td colSpan="8" className="no-data">
+                  Не найдено водителей
+                </td>
               </tr>
             ) : (
-              drivers.map(driver => (
+              drivers.map((driver) => (
                 <tr key={driver._id}>
                   <td>
                     <strong>{driver.name}</strong>
@@ -236,24 +260,24 @@ const DriversManager = () => {
                   <td>{getStatusBadge(driver.isActive)}</td>
                   <td>{new Date(driver.createdAt).toLocaleDateString()}</td>
                   <td className="actions">
-                    <button 
-                      onClick={() => handleEdit(driver)} 
+                    <button
+                      onClick={() => handleEdit(driver)}
                       className="btn-edit"
                       title="Edit driver"
                     >
                       ✏️ Редактировать
                     </button>
                     {driver.isActive ? (
-                      <button 
-                        onClick={() => handleDelete(driver._id)} 
+                      <button
+                        onClick={() => handleDelete(driver._id)}
                         className="btn-delete"
                         title="Deactivate driver"
                       >
                         🔴 Деактивировать
                       </button>
                     ) : (
-                      <button 
-                        onClick={() => handleActivate(driver._id)} 
+                      <button
+                        onClick={() => handleActivate(driver._id)}
                         className="btn-activate"
                         title="Activate driver"
                       >

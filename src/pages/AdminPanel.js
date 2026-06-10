@@ -9,6 +9,7 @@ import OrdersManager from '../components/OrdersManager/OrdersManager';
 import ConfirmOrders from '../components/ConfirmOrders';
 import UsersManager from '../components/UsersManager';
 import Header from '../components/Header/Header';
+import { apiSettings } from '../utils/apiSettings';
 
 const AdminPanel = () => {
   const { user, socket } = useAuth();
@@ -49,7 +50,7 @@ const AdminPanel = () => {
 
   const fetchPendingOrders = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/orders');
+      const res = await axios.get(`${apiSettings.localServer}/api/orders`);
       setPendingOrders(
         res.data.filter((o) => o.status === 'pending_confirmation'),
       );

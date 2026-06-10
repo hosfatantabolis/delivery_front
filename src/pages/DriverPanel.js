@@ -8,6 +8,7 @@ import 'react-calendar/dist/Calendar.css';
 import './DriverPanel.css';
 import Header from '../components/Header/Header';
 import OrderStats from '../components/OrderStats/OrderStats';
+import { apiSettings } from '../utils/apiSettings';
 
 const DriverPanel = () => {
   const { user, socket } = useAuth();
@@ -206,7 +207,7 @@ const DriverPanel = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:5000/api/orders');
+      const res = await axios.get(`${apiSettings.localServer}/api/orders`);
       const driverOrders = res.data.filter(
         (order) =>
           order.assignedDriver?._id === user?.id ||
@@ -281,7 +282,7 @@ const DriverPanel = () => {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      await axios.put(`http://localhost:5000/api/orders/${orderId}`, {
+      await axios.put(`${apiSettings.localServer}/api/orders/${orderId}`, {
         status: newStatus,
       });
       await fetchOrders();

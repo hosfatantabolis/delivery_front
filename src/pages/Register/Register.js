@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { apiSettings } from '../../utils/apiSettings';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -161,7 +162,7 @@ const Register = () => {
 
     try {
       const response = await axios.post(
-        'http://localhost:5000/api/auth/register',
+        `${apiSettings.localServer}/api/auth/register`,
         payload,
       );
       console.log('Registration response:', response.data);

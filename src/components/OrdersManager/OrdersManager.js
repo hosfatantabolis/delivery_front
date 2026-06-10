@@ -8,6 +8,7 @@ import DriverSelect from '../../utils/DriverSelect/DriverSelect';
 import FilterSelect from '../../utils/FilterSelect/FilterSelect';
 import './OrdersManager.css';
 import '../../utils/utils';
+import { apiSettings } from '../../utils/apiSettings';
 
 const OrdersManager = () => {
   const { user, socket } = useAuth();
@@ -142,10 +143,13 @@ const OrdersManager = () => {
 
     setReassigning(true);
     try {
-      await axios.put(`http://localhost:5000/api/orders/${orderId}/reassign`, {
-        newDriverId: newDriverId,
-        reason: reassignReason || 'Admin reassignment',
-      });
+      await axios.put(
+        `${apiSettings.localServer}/api/orders/${orderId}/reassign`,
+        {
+          newDriverId: newDriverId,
+          reason: reassignReason || 'Admin reassignment',
+        },
+      );
       setSuccess(`Order reassigned to new driver successfully!`);
       fetchOrders();
       setShowReassignModal(false);
@@ -173,7 +177,7 @@ const OrdersManager = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:5000/api/orders');
+      const res = await axios.get(`${apiSettings.localServer}/api/orders`);
 
       let filteredOrders = res.data;
 
@@ -196,7 +200,7 @@ const OrdersManager = () => {
 
   const fetchClients = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/clients');
+      const res = await axios.get(`${apiSettings.localServer}/api/clients`);
       setClients(res.data.filter((c) => c.status === 'active'));
     } catch (error) {
       console.error('Error fetching clients:', error);
@@ -205,7 +209,9 @@ const OrdersManager = () => {
 
   const fetchDrivers = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/users/drivers');
+      const res = await axios.get(
+        `${apiSettings.localServer}/api/users/drivers`,
+      );
       setDrivers(res.data.filter((d) => d.isActive));
     } catch (error) {
       console.error('Error fetching drivers:', error);
@@ -339,12 +345,12 @@ const OrdersManager = () => {
     try {
       if (editingOrder) {
         await axios.put(
-          `http://localhost:5000/api/orders/${editingOrder._id}`,
+          `${apiSettings.localServer}/api/orders/${editingOrder._id}`,
           orderData,
         );
         setSuccess('Order updated successfully!');
       } else {
-        await axios.post('http://localhost:5000/api/orders', orderData);
+        await axios.post('${apiSettings.localServer}/api/orders', orderData);
         setSuccess('Order created successfully!');
       }
 
@@ -360,7 +366,9 @@ const OrdersManager = () => {
 
   const handleConfirmOrder = async (orderId) => {
     try {
-      await axios.post(`http://localhost:5000/api/orders/${orderId}/confirm`);
+      await axios.post(
+        `${apiSettings.localServer}/api/orders/${orderId}/confirm`,
+      );
       setSuccess('Order confirmed successfully!');
       fetchOrders();
       setTimeout(() => setSuccess(''), 3000);
@@ -379,9 +387,12 @@ const OrdersManager = () => {
     }
 
     try {
-      await axios.put(`http://localhost:5000/api/orders/${orderId}/assign`, {
-        driverId,
-      });
+      await axios.put(
+        `${apiSettings.localServer}/api/orders/${orderId}/assign`,
+        {
+          driverId,
+        },
+      );
       setSuccess(`Driver assigned successfully!`);
       fetchOrders();
       setTimeout(() => setSuccess(''), 3000);
@@ -394,7 +405,7 @@ const OrdersManager = () => {
 
   const handleUpdateStatus = async (orderId, status) => {
     try {
-      await axios.put(`http://localhost:5000/api/orders/${orderId}`, {
+      await axios.put(`${apiSettings.localServer}/api/orders/${orderId}`, {
         status,
       });
       setSuccess(`Order status updated to ${status}`);

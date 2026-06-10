@@ -1,6 +1,13 @@
-import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useRef,
+} from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
+import { apiSettings } from '../utils/apiSettings';
 
 const AuthContext = createContext();
 
@@ -14,48 +21,48 @@ export const AuthProvider = ({ children }) => {
 
   // Initialize socket connection
   const initSocket = (authToken) => {
-  if (!authToken) return null;
-  
-  if (socketRef.current) {
-    socketRef.current.disconnect();
-  }
+    if (!authToken) return null;
 
-  const newSocket = io('http://localhost:5000', {
-    transports: ['websocket', 'polling'],
-    reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 1000,
-    auth: { token: authToken }
-  });
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+    }
 
-  newSocket.on('connect', () => {
-    console.log('✅ Socket connected:', newSocket.id);
-    console.log('Socket auth token present:', !!authToken);
-  });
+    const newSocket = io(`${apiSettings.localServer}`, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      auth: { token: authToken },
+    });
 
-  newSocket.on('connect_error', (error) => {
-    console.error('❌ Socket connection error:', error.message);
-  });
+    newSocket.on('connect', () => {
+      console.log('✅ Socket connected:', newSocket.id);
+      console.log('Socket auth token present:', !!authToken);
+    });
 
-  newSocket.on('disconnect', (reason) => {
-    console.log('Socket disconnected:', reason);
-  });
+    newSocket.on('connect_error', (error) => {
+      console.error('❌ Socket connection error:', error.message);
+    });
 
-  // Test event
-  newSocket.on('test', (data) => {
-    console.log('Test event received:', data);
-  });
+    newSocket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
+    });
 
-  socketRef.current = newSocket;
-  setSocket(newSocket);
-  return newSocket;
-};
+    // Test event
+    newSocket.on('test', (data) => {
+      console.log('Test event received:', data);
+    });
+
+    socketRef.current = newSocket;
+    setSocket(newSocket);
+    return newSocket;
+  };
 
   // Check if user is already logged in on page load
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
         setLoading(false);
         return;
@@ -66,14 +73,15 @@ export const AuthProvider = ({ children }) => {
 
       try {
         // Verify token and get user data
-        const response = await axios.get('http://localhost:5000/api/auth/me');
+        const response = await axios.get(
+          `${apiSettings.localServer}/api/auth/me`,
+        );
         const userData = response.data.user;
-        
+
         setUser(userData);
-        
+
         // Initialize socket connection after successful auth
         initSocket(token);
-        
       } catch (error) {
         console.error('Auth check failed:', error);
         // Token is invalid, clear it
@@ -97,21 +105,24 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+      const response = await axios.post(
+        `${apiSettings.localServer}/api/auth/login`,
+        { email, password },
+      );
       const { token, user } = response.data;
-      
+
       // Store token
       localStorage.setItem('token', token);
-      
+
       // Set axios default header
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      
+
       // Set user state
       setUser(user);
-      
+
       // Initialize socket connection
       initSocket(token);
-      
+
       return user;
     } catch (error) {
       throw error.response?.data || { error: 'Login failed' };
@@ -122,7 +133,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
     setUser(null);
-    
+
     if (socketRef.current) {
       socketRef.current.disconnect();
       socketRef.current = null;

@@ -1,4 +1,5 @@
 import io from 'socket.io-client';
+import { apiSettings } from '../utils/apiSettings';
 
 class SocketService {
   constructor() {
@@ -19,14 +20,14 @@ class SocketService {
     }
 
     this.token = token;
-    
-    this.socket = io('http://localhost:5000', {
+
+    this.socket = io(`${apiSettings.localServer}`, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      auth: { token }
+      auth: { token },
     });
 
     this.setupEventHandlers();

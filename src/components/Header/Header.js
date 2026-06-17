@@ -18,7 +18,7 @@ const Header = () => {
     <>
       {user.role === 'admin' && (
         <div className="admin-header">
-          <h1>Admin Dashboard</h1>
+          <h1>Admin</h1>
           <div className="header-buttons">
             <Notifications />
             <button
@@ -62,7 +62,7 @@ const Header = () => {
 
       {user.role === 'manager' && (
         <div className="header">
-          <h1>Manager Dashboard</h1>
+          <h1>Менеджер</h1>
           <div className="header-buttons">
             <Notifications />
             <span className="welcome">Welcome, {user.name}</span>
